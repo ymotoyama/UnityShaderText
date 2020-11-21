@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE">
+    <title>Unlitシェーダー入門</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+       
+    </style>
+  </head>
+  <body>
+    <p class="title">Unlitシェーダー入門</p>
+    <p> Unlitシェーダーを書きながら、Unityのシェーダーについて少しずつ学んでいきます。</p>
+    <p>なお、この資料で使っているUnityのバージョンは<code>Unity2019.4.11</code>です。<br>
+    </p>
+    <h1>Unlitシェーダーとは</h1>
+    <p><strong>Unlitシェーダー</strong>とは、ライティングを行わないシェーダーのことです。<br>
+      ライティングを行わないので、シェーダープログラムも比較的シンプルになります。<br>
+      まずはUnlitシェーダーを書いて、シェーダーを学んでいきましょう。</p>
+    <h1>Unlitシェーダーの作成</h1>
+    <p>UnityHubを起動して新しいプロジェクトを作ります。<br>
+      プロジェクト名は「UnlitShaderPractice」などと適当に付けましょう。</p>
+    <p>素材を<a href="Pacchi.unitypackage" target="_blank">こちらからダウンロード</a>してください。</p>
+    <p>素材をインポートし、3Dモデルをシーンに配置します。<br>
+      Positionは (0, 0, 0) にしておきましょう。</p>
+    <p><img src="image/01.png" alt=""></p>
+    <p><br>
+    </p>
+    <p>Projectウィンドウで<br>
+      Create＞Shader＞Unlit Shader</p>
+    <p>ファイル名は「MyFirstShader」とでもしましょう。</p>
+    <p><br>
+    </p>
+    <p>作ったファイルをダブルクリックします。VisualStudioで開かれると思います。</p>
+    <p>最初から、シェーダープログラムが書いてあります。<br>
+      とりあえずこのまま、オブジェクトに適用してみましょう。</p>
+    <p>Projectウィンドウで<br>
+      Create＞Material</p>
+    <p>ファイル名は「MyFirstShaderMat」とでもしましょう。</p>
+    <p><br>
+    </p>
+    <p>MyFirstShaderをMyFirstShaderMatに設定します。</p>
+    <p><img src="image/Material.png" alt=""></p>
+    <p>Shader欄をクリックし、Unlit＞MyFirstShaderを選択します。</p>
+    <p><br>
+    </p>
+    <p>Textureも設定しておきましょう。</p>
+    <img src="image/Material2.png" alt=""><br>
+    <p><br>
+    </p>
+    <p>MyFirstShaderMatをオブジェクトに適用します。<br>
+    </p>
+    <p> <img src="image/MyFirstUnlitShader.png" alt=""> </p>
+    <p>これがUnlitシェーダーの初期状態の見た目です。Unlitの名の通り、ライトの影響は受けず、陰影の無いのっぺりとした見た目になります。</p>
+    <h1>自分で書いてみよう</h1>
+    <p>初期状態のUnlitシェーダーには、わりと余計なものがゴテゴテ付いているので、極限まで削ぎ落としたシェーダーを自分で書いてみましょう。</p>
+    <p>MyFirstShader.shaderを編集します。</p>
+    <p class="source">Shader "Unlit/MyFirstShader"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert (appdata v) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 frag () : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(1, 0, 0, 1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p>保存すると、すぐにUnity上に反映されます。</p>
+    <p><img src="image/02.png" alt=""></p>
+    <p>真っ赤に表示されるシェーダーの完成です。</p>
+    <p><br>
+    </p>
+    <p>ちなみに、シェーダープログラムに誤りがあってコンパイルエラーとなる場合は、以下のように表示されます。</p>
+    <p><img src="image/Error.png" alt=""></p>
+    <p>この強烈なピンク色（紫）は、シェーダーのエラーを表す色です。<br>
+      (1, 0, 1, 1)です。</p>
+    <p>この色が出ているということは、シェーダーが正しく機能していないということです。</p>
+    <br>
+    <p><br>
+    </p>
+    <p>コードにコメントする形で説明していきます（青字が説明コメント）：</p>
+    <p class="source">Shader "Unlit/MyFirstShader" <span style="color: #3232ff;">←Unity上で表示されるカテゴリ名とシェーダー名。好きに付けて良い。</span><br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; SubShader <span style="color: #3232ff;">←SubShaderブロック。ハードの性能に応じてシェーダーを切り替えるときなんかは、これを複数定義する。初心者は1個で十分。</span><br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass <span style="color: #3232ff;">←Passブロック。複数定義すると、描画処理を2回行ったりすることができる。まあしばらくは1個で十分。アウトラインを出したいときなどは2つ使ったりする。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM <span
+        style="color: #3232ff;">←「ここから下の記述はCg言語ですよ」という合図。Cg言語というのは、シェーダーを記述するための言語のひとつ。</span><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert <span
+        style="color: #3232ff;">←頂点シェーダー（vertex shader）の関数名は「vert」だよ、という定義。関数名は好きな名前にして良いが、普通はvertにする。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag <span
+        style="color: #3232ff;">←フラグメントシェーダー（fragment shader）の関数名は「frag」だよ、という定義。</span><span
+        style="color: #3232ff;">関数名は好きな名前にして良いが、普通はfragにする。</span><br>
+      <br>
+      <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓入力構造体（Unityからデータを受け取るための構造体）の定義。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; appdataという名前は好きな名前に変えて良いが、普通はappdataとする。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓float4 vertexの部分は型と変数名の定義。変数名は自由。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : POSITIONの部分はセマンティクスの指定。セマンティクスとは「意味」という意味で、その変数にどのデータを格納すれば良いかを表す。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; POSITIONというのは頂点座標のこと。つまり、vertexという変数には頂点座標（オブジェクト空間）が格納される。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION; <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓頂点シェーダー関数の定義。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 「float4」は戻り値の型を表す。「: SV_POSITION」はセマンティクスであり、戻り値が頂点座標であることを表す。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 頂点シェーダーの戻り値はfloat4型でも構造体でも良いが、いずれにせよ、SV_POSITIONセマンティクスが付与されたデータを返却しなければならない。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert (appdata v) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓UnityObjectToClipPos()というのはオブジェクト空間をクリップ空間に変換するヘルパー関数。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MVP行列をかけるのと同じ。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓フラグメントシェーダー関数の定義。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 「: SV_Target」は、画面のピクセルを塗るという意味のセマンティクス。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 別の指定を行うことも可能だが、まず使わないので、とりあえずSV_Targetと書いておけばOK。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 frag () : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓RGBAが(1, 0, 0, 1)の色を返却。つまり赤を返却。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(1, 0, 0, 1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG <span
+        style="color: #3232ff;">←「ここまでがCg言語ですよ」という合図。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p class="column"><b>初期状態のシェーダーに書いてあったのはなんだったのか</b><br>
+      <br>
+      初期状態のシェーダーに書いてある内容の意味を完全に理解したい場合は、こちらのページがとても参考になります。<br>
+      <a href="https://amagamina.jp/unity-shader/">アマガミナブログ - Unityシェーダプログラム入門 UnlitShaderの要素を全て解説</a><br>
+      ある程度シェーダーの書き方がわかってきたら、読んでみると、さらに理解が進むでしょう。</p>
+    <p><br>
+    </p>
+    <h1>float4とは</h1>
+    <p>Unityのシェーダーでは<strong>float4</strong>という型を使いまくります。<br>
+      これは、float型の値を4つまとめたものです。</p>
+    <p>様々な用途に使われます。</p>
+    <p>Unity C#のVector3のように、座標やベクトルを表すためにも使います。<br>
+      Unity C#のColorのように、色情報（RGBA）を格納するためにも使います。</p>
+    <p>例えば、新たにblueという名前の変数を作り、そこに青い色を格納するコードは次のようになります。</p>
+    <p class="source">float4 blue = float4(0, 0, 1, 1);</p>
+    <p>※シェーダーでは、色の各要素（RGBA）を<strong>0～1で指定</strong>します。<strong>0～255ではない</strong>ので注意！</p>
+    <p><br>
+    </p>
+    <p>中身の各要素にアクセスしたい場合、<code>変数名.x</code>、<code>変数名.y</code>としたり、<code>変数名.r</code>、<code>変数名.g</code>としたりしてアクセスすることができます。<br>
+      例えば、上記の変数blueの青要素にアクセスしたい場合は<code>blue.b</code>とします。<br>
+      ちなみに、<code>blue.z</code>と書いてもまったく同じ結果になります（混乱するので普通はしません）。</p>
+    <p><br>
+    </p>
+    <p>float4の他に、float、float2、float3もあります。用途によって使い分けます。<br>
+      ちなみに、さらに、モバイル機などのために、精度を落として処理負荷を下げた型（fixed、half）もあるのですが、この授業は入門が目的なので、高速化を目的としたそれらの型は扱いません（PCだと意味無いし）。</p>
+    <h1>自分で変換してみよう</h1>
+    <p>vert関数の内容を、次のように書き換えてみましょう：</p>
+    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+      {<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // 入力構造体から頂点座標（オブジェクト空間）を取り出す</span><br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // モデル行列を使って、オブジェクト空間からワールド空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // ビュー行列を使って、ワールド空間からビュー空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 viewPos = mul(UNITY_MATRIX_V, worldPos);<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // プロジェクション行列を使って、ビュー空間からクリップ空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 clipPos = mul(UNITY_MATRIX_P, viewPos);<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // クリップ空間に変換された座標を返却する</span><br>
+      &nbsp;&nbsp;&nbsp; return clipPos;<br>
+      }</p>
+    <p>書けたら、保存してUnity上で確認しましょう。<br>
+      結果は、先ほどと何も変わりません。</p>
+    <p>もともと書いてあった<code>UnityObjectToClipPos()</code>というのはMVP行列をかけるのと同じなので、当然です。</p>
+    <p>今回は理解を深めるために、あえてバラしてみました。<br>
+      特に必要なければ、普通は素直に<code>UnityObjectToClipPos()</code>を使いましょう。</p>
+    <h1>頂点座標をいじってみよう</h1>
+    <p>例えば次のようにすると、オブジェクトの表示位置が、本来の位置から1メートル上にズレます。（黄色部分を追加）</p>
+    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// 入力構造体から頂点座標（オブジェクト空間）を取り出す</span><br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; <em>objectPos.y += 1;</em><br>
+      &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// モデル行列を使って、オブジェクト空間からワールド空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
+      &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// ビュー行列を使って、ワールド空間からビュー空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 viewPos = mul(UNITY_MATRIX_V, worldPos);<br>
+      &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// プロジェクション行列を使って、ビュー空間からクリップ空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 clipPos = mul(UNITY_MATRIX_P, viewPos);<br>
+      &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// クリップ空間に変換された座標を返却する</span><br>
+      &nbsp;&nbsp;&nbsp; return clipPos;<br>
+      }</p>
+    <p><br>
+    </p>
+    <p><img src="image/03.png" alt=""></p>
+    <p>これだけではあまり面白くないので、時間とともに動くようにしてみましょう。</p>
+    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+      {<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // 入力構造体から頂点座標（オブジェクト空間）を取り出す</span><br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; objectPos.y += <em>sin(_Time.y)</em>;<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // モデル行列を使って、オブジェクト空間からワールド空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // ビュー行列を使って、ワールド空間からビュー空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 viewPos = mul(UNITY_MATRIX_V, worldPos);<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // プロジェクション行列を使って、ビュー空間からクリップ空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 clipPos = mul(UNITY_MATRIX_P, viewPos);<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // クリップ空間に変換された座標を返却する</span><br>
+      &nbsp;&nbsp;&nbsp; return clipPos;<br>
+      }</p>
+    保存後、Unityエディターで実行してみてください。<br>
+    <p><img src="image/04.gif" alt=""></p>
+    <p><code>sin()</code>は三角関数のサインです。</p>
+    <p><code>_Time.y</code>はUnityが用意してくれた変数で、シーン開始からの秒数が格納されています。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p>さらに書き足してみましょう：</p>
+    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+      {<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // 入力構造体から頂点座標（オブジェクト空間）を取り出す</span><br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; objectPos.y += sin(_Time.y<em> + objectPos.x</em>);<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // モデル行列を使って、オブジェクト空間からワールド空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // ビュー行列を使って、ワールド空間からビュー空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 viewPos = mul(UNITY_MATRIX_V, worldPos);<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // プロジェクション行列を使って、ビュー空間からクリップ空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 clipPos = mul(UNITY_MATRIX_P, viewPos);<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // クリップ空間に変換された座標を返却する</span><br>
+      &nbsp;&nbsp;&nbsp; return clipPos;<br>
+      }</p>
+    <br>
+    <p><img src="image/05.gif" alt=""></p>
+    <p>なぜこのような結果になるのか、考えてみてください。</p>
+    <p><br>
+    </p>
+    <h1>座標空間の違いを認識しよう</h1>
+    <p>オブジェクトのRotationのxを90度回転させてみましょう。</p>
+    <p><img src="image/06.png" alt=""></p>
+    <p><br>
+    </p>
+    <p>すると、結果は次のようになります：</p>
+    <p><img src="image/07.gif" alt=""></p>
+    <p><br>
+    </p>
+    <p>動きをよく確認したら、シェーダープログラムを次のように書き換えてみましょう：</p>
+    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// 入力構造体から頂点座標（オブジェクト空間）を取り出す</span><br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; <u>//objectPos.y += sin(_Time.y + objectPos.x);</u><br>
+      &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// モデル行列を使って、オブジェクト空間からワールド空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
+      &nbsp;&nbsp;&nbsp; <em>worldPos.y += sin(_Time.y + worldPos.x);</em><br>
+      &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// ビュー行列を使って、ワールド空間からビュー空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 viewPos = mul(UNITY_MATRIX_V, worldPos);<br>
+      &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// プロジェクション行列を使って、ビュー空間からクリップ空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp; float4 clipPos = mul(UNITY_MATRIX_P, viewPos);<br>
+      &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// クリップ空間に変換された座標を返却する</span><br>
+      &nbsp;&nbsp;&nbsp; return clipPos;<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>結果を確認しましょう。</p>
+    <p>どのように変わりましたか？</p>
+    <p>なぜそのように変わったのでしょうか？</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><a href="../">目次へ戻る</a></p>
+    <p><br>
+    </p>
+  </body>
+</html>
