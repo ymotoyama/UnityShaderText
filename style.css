@@ -1,0 +1,133 @@
+
+/*** ソースコード用の等幅フォント埋め込み *****************/
+
+@font-face {
+  font-family: note_monospace;
+  src: url('font/notemonospace.otf');
+}
+
+
+/*** ソースコード *****************/
+.source {
+  font-family: note_monospace;
+  padding: 0.5em 0.8em;
+  margin: 1em 0.15em;
+  color: #222;
+  background: white;
+  border-left: solid 8px #ccc;
+  /* box-shadow */
+  -webkit-box-shadow: rgba(0,0,0,0.13) 1px 2px 7px;
+  -moz-box-shadow: rgba(0,0,0,0.13) 1px 2px 7px;
+  box-shadow: rgba(0,0,0,0.13) 1px 2px 7px;
+}
+
+.console {
+  font-family: note_monospace;
+  padding: 0.5em 0.8em;
+  margin: 1em 0.15em;
+  color: #ddd;
+  background: black;
+  /* box-shadow */
+  -webkit-box-shadow: rgba(0,0,0,0.13) 1px 2px 7px;
+  -moz-box-shadow: rgba(0,0,0,0.13) 1px 2px 7px;
+  box-shadow: rgba(0,0,0,0.13) 1px 2px 7px;
+}
+
+/*** コラム *****************/
+.column {
+  color: #000000;
+  line-height: 1.6;
+  padding: 0.4em 1.2em;
+  margin: 2em 1em;
+  background: #f4feff;
+  border: dashed 2px #72a6da;/*点線*/
+}
+
+
+/*** AA（アスキーアート） *****************/
+.aa {
+  background-color: white;
+  color: #000;
+  font-family:'ms pgothic','ｍｓ ｐゴシック',sans-serif;
+  line-height: 16px;
+  font-size: 16px;  
+}
+
+/*** タイトル *****************/
+.title {
+  font-size: 50px;
+  color: #000;
+  font-weight: 900;
+}
+
+/*** 画像に影をつける *****************/
+img{
+  /* border-radius */
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  /* box-shadow */
+  -webkit-box-shadow: rgba(0,0,0,0.13) 1px 2px 7px;
+  -moz-box-shadow: rgba(0,0,0,0.13) 1px 2px 7px;
+  box-shadow: rgba(0,0,0,0.13) 1px 2px 7px;
+}
+
+/*** 本文の見た目 *****************/
+body {
+  font-family: "游ゴシック体", YuGothic, "游ゴシック Medium", "Yu Gothic Medium", "游ゴシック", "Yu Gothic", "メイリオ", sans-serif;
+  font-size: 14.5px;
+  color: #222222;
+  line-height: 1.8;
+}
+
+/*** 見出しに自動で連番を振る機能 *****************/
+body {
+  counter-reset: chapter;
+}
+h1 {
+  counter-reset: sub-chapter;
+}
+h2 {
+  counter-reset: section;
+}
+
+h1::before {
+  counter-increment: chapter;
+  content: counter(chapter) ". ";
+}
+h2::before {
+  counter-increment: sub-chapter;
+  content: counter(chapter) "-" counter(sub-chapter) ". ";
+}
+h3::before {
+  counter-increment: section;
+  content: "(" counter(section) ") ";
+}
+
+/*** 表のボーダーと余白 *****************/
+table, td, th {
+  border-collapse: collapse;
+  border:1px solid #666;
+  padding: 3px 8px;
+}
+
+h1{margin-top:100px;}
+h2{margin-top:50px;}
+
+/* <em>タグは黄色背景とする */
+em{background:#ffa; font-style:normal;}
+
+/* <strong>タグは黄色背景太字とする */
+strong{background:#ffa;}
+
+/* ソースコード中の<u>（下線タグ）は赤背景打ち消し線とする */
+.source > u{background:#fbb;text-decoration: line-through;}
+
+code {
+  font-size: 90%;
+  font-family: note_monospace;
+  background:#e8e8e8;
+  margin: 1px 2px;
+  padding: 1px 5px;
+  color: #000;
+}
