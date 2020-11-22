@@ -287,9 +287,69 @@
     <p>どのように変わりましたか？</p>
     <p>なぜそのように変わったのでしょうか？</p>
     <p>ビュー空間で揺らすとどうなるでしょうか？</p>
-    <p><br>
-    </p>
-    <p><br>
+    <h1>行列の理解は必要？</h1>
+    <p>Unityでシェーダーを書くにあたっては、変換行列はUnityが用意してくれるため、座標空間と変換行列の役割さえ理解しておけば、行列に関する詳しい知識は無くても、ほとんど問題ありません。</p>
+    <p>ただ、マニアックな表現をしようとすると、自分で変換行列を組み立てる必要が出てくることもあるでしょう。その場合は、行列の知識がある程度必要になってきます。</p>
+    <p>例えば、頂点シェーダー内で任意の回転を行いたいという場合、回転行列がわかっていれば、実現できます。</p>
+    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; // 入力構造体から頂点座標（オブジェクト空間）を取り出す<br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      <em>&nbsp;&nbsp;&nbsp; // 回転角度。オブジェクトの中心から離れるほど増える。時間経過でも増える。<br>
+        &nbsp;&nbsp;&nbsp; float theta = objectPos.y * 4 * _Time.y;<br>
+        &nbsp;&nbsp;&nbsp; // サインとコサインを求める<br>
+        &nbsp;&nbsp;&nbsp; float s = sin(theta);<br>
+        &nbsp;&nbsp;&nbsp; float c = cos(theta);<br>
+        &nbsp;&nbsp;&nbsp; // Y軸回転させる回転行列<br>
+        &nbsp;&nbsp;&nbsp; float4x4 rotateMatrix = float4x4(<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c, 0, s, 0,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0, 1, 0, 0,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -s, 0, c, 0,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0, 0, 0, 1);<br>
+        &nbsp;&nbsp;&nbsp; // 回転行列をかけて座標変換<br>
+        &nbsp;&nbsp;&nbsp; objectPos = mul(rotateMatrix, objectPos);</em><br>
+      &nbsp;&nbsp;&nbsp; // モデル行列を使って、オブジェクト空間からワールド空間に変換<br>
+      &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
+      &nbsp;&nbsp;&nbsp; // ビュー行列を使って、ワールド空間からビュー空間に変換<br>
+      &nbsp;&nbsp;&nbsp; float4 viewPos = mul(UNITY_MATRIX_V, worldPos);<br>
+      &nbsp;&nbsp;&nbsp; // プロジェクション行列を使って、ビュー空間からクリップ空間に変換<br>
+      &nbsp;&nbsp;&nbsp; float4 clipPos = mul(UNITY_MATRIX_P, viewPos);<br>
+      &nbsp;&nbsp;&nbsp; // クリップ空間に変換された座標を返却する<br>
+      &nbsp;&nbsp;&nbsp; return clipPos;<br>
+      }</p>
+    <p>シェーダーの勉強とともに、行列の勉強も行うと、プログラマーとして一段と成長できるでしょう。<br>
+      なお、変換行列や逆行列の式などを暗記する必要はありません。その都度調べれば済むことです。<br>
+      各種行列の特徴などを把握していればOKです。</p>
+    <p>ちなみに、上記のY軸に回転させるシェーダーですが、Y軸回転はXZ平面で二次元の回転を行うのと同じなので、以下のように簡略化することができます：</p>
+    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; // 入力構造体から頂点座標（オブジェクト空間）を取り出す<br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; // 回転角度。オブジェクトの中心から離れるほど増える。時間経過でも増える。<br>
+      &nbsp;&nbsp;&nbsp; float theta = objectPos.y * 3 * _Time.y;<br>
+      &nbsp;&nbsp;&nbsp; // サインとコサインを求める<br>
+      &nbsp;&nbsp;&nbsp; float s = sin(theta);<br>
+      &nbsp;&nbsp;&nbsp; float c = cos(theta);<br>
+      <em>&nbsp;&nbsp;&nbsp; // Y軸回転させる回転行列<br>
+        &nbsp;&nbsp;&nbsp; float2x2 mat = float2x2(<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c, s,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -s, c);<br>
+        &nbsp;&nbsp;&nbsp; // xとz要素に回転行列をかけて座標変換<br>
+        &nbsp;&nbsp;&nbsp; objectPos.xz = mul(mat, objectPos.xz);</em><br>
+      &nbsp;&nbsp;&nbsp; // モデル行列を使って、オブジェクト空間からワールド空間に変換<br>
+      &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
+      &nbsp;&nbsp;&nbsp; // ビュー行列を使って、ワールド空間からビュー空間に変換<br>
+      &nbsp;&nbsp;&nbsp; float4 viewPos = mul(UNITY_MATRIX_V, worldPos);<br>
+      &nbsp;&nbsp;&nbsp; // プロジェクション行列を使って、ビュー空間からクリップ空間に変換<br>
+      &nbsp;&nbsp;&nbsp; float4 clipPos = mul(UNITY_MATRIX_P, viewPos);<br>
+      &nbsp;&nbsp;&nbsp; // クリップ空間に変換された座標を返却する<br>
+      &nbsp;&nbsp;&nbsp; return clipPos;<br>
+      }</p>
+    <p>上記の<code>objectPos.xz</code>というのは<strong>スウィズル表記</strong>というもので、シェーダー言語特有の記述になります。<br>
+      ベクトルなどから、使いたい要素のみを取得したり、代入したりすることができます。<br>
+      <code>変数名.xxx</code>や<code>変数名.zyx</code>、<code>変数名.rg</code>などと書くこともできます。<br>
+      上記のように<code>objectPos.xz</code>とした場合は<code>float2</code>型として扱われます。<br>
+      <br>
     </p>
     <p><br>
     </p>
