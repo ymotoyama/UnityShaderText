@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE">
+    <title>フラグメントシェーダーの基礎</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+       
+    </style>
+  </head>
+  <body>
+    <p class="title">フラグメントシェーダーの基礎</p>
+    <p>ピクセルの最終的な色を決定する<strong>フラグメントシェーダー</strong>の基礎を学びます。</p>
+    <h1>単色のシェーダー</h1>
+    <h2>単色のシェーダー</h2>
+    <p>まずは、色の扱いに慣れましょう。<br>
+      単色で描画するシェーダーを作ります。</p>
+    <p class="source">Shader "MyShader/SolidColor"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert (float4 vertex : POSITION) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag () : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(1, 1, 1, 1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>下記の部分がフラグメントシェーダー関数です：</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag () : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(1,1,1,1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+    </p>
+    <p>フラグメントシェーダーは、各種テクスチャーや光源などを考慮して、諸々の計算を行い、ピクセルの色を決定して、関数の戻り値として色を返却するのが仕事です。その色で画面のピクセルが塗られます。</p>
+    <p>まずはシェーダーにおける色の扱いに慣れましょう。</p>
+    <p><strong>シェーダーにおいては、色はRGBAを0～1で表します</strong>。（0～255ではないので注意！）</p>
+    <p><br>
+    </p>
+    <h2>練習問題</h2>
+    <ol>
+      <li>黒にしましょう</li>
+      <li>青にしましょう</li>
+      <li>黄色にしましょう</li>
+      <li>オレンジにしましょう</li>
+      <li>アルファ値を変えると、透明や半透明にすることができるかを確認しましょう</li>
+      <li>時間経過で色を変えてみましょう<br>
+        <img src="image/brightpacchi.gif" alt=""></li>
+    </ol>
+    <h1>テクスチャーから色を読み取る</h1>
+    <h2>テクスチャーを使うシェーダー</h2>
+    <p>テクスチャー画像から色を読み取るシェーダーを作りましょう。ポイントとなる部分を黄色で強調します。</p>
+    <p class="source">Shader "MyShader/TextureTest"<br>
+      {<br>
+      <em>&nbsp;&nbsp;&nbsp; Properties<br>
+        &nbsp;&nbsp;&nbsp; {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Texture", 2D) = "white" {}<br>
+        &nbsp;&nbsp;&nbsp; }</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert (float4 vertex : POSITION) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag() : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = <em>tex2D(_MainTex, float2(0.1, 0.1)</em>);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>下記のテスト用画像をダウンロードし、プロジェクトにインポートしてください。</p>
+    <p><img src="image/sample_texture_1.png" alt="" style="width: 274px; height: 274px;"></p>
+    <p><br>
+    </p>
+    <p>マテリアルにテクスチャーを設定します。</p>
+    <img src="image/SetTexture.png" alt="">
+    <p><br>
+    </p>
+    <p>モデルが赤茶色で表示されます。</p>
+    <img src="image/TextureTest.png" alt="">
+    <p><br>
+    </p>
+    <h2>コードの解説</h2>
+    <p class="source">&nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp; }</p>
+    この部分は、プロパティブロックといいます。<br>
+    ここにパラメーターを定義すると、Unityエディター上にマテリアルのパラメーターとして表示されるようになります。<br>
+    今回はテクスチャー画像をUnity側から受け取るために、_MainTexという名前のパラメーターを定義しています。<br>
+    その他の説明は<a href="https://amagamina.jp/unity-shader/#Properties" target="_blank">こちら</a>が詳しいです。<br>
+    <p>プロパティブロックでパラメーターを定義するだけではシェーダー内で使えません。プロパティブロックで定義したものと同名の変数をシェーダー内で定義しておく必要があります。それが以下の部分です：</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;</p>
+    <p>プロパティブロックで定義したものと同名の変数を、対応した型で定義しておくと、自動的に内容が代入され、頂点シェーダーやフラグメントシェーダー内で使えるようになります。</p>
+    <p><br>
+    </p>
+    <p class="source">float4 color = tex2D(_MainTex, float2(0.1, 0.1));</p>
+    <p><code>tex2D</code>は組み込み関数で、テクスチャーから色を読み取ることができます（サンプリングともいう）。<br>
+      第1引数にテクスチャー変数を指定し、第2引数にUV座標を指定すると、該当するテクセルの色を取得します。（テクセルとは、テクスチャー画像上のピクセルのことです）</p>
+    <h2>UV座標とは</h2>
+    <p>UV座標とは、テクスチャー画像上での位置を表す座標系です。<br>
+      <img src="image/uvcoord.png" alt="" style="width: 387px; height: 383px;"></p>
+    <p>Uが横軸で、Vが縦軸です。</p>
+    <p>名前が「U」と「V」であることに深い意味はなく、XやYを使ってしまうと、頂点座標と混ざって混乱するので、空いてるUとVを割り当てただけらしいです。</p>
+    <h2>練習問題</h2>
+    <ol>
+      <li>紺色にしましょう</li>
+      <li>ピンクにしましょう</li>
+      <li>水色にしましょう</li>
+      <li>緑(5番)にしましょう</li>
+      <li>float(1.1, 0.1)を指定すると、どうなるでしょうか？</li>
+      <li>float(0, 0)を指定すると何色になりますか？ なぜその色になるのでしょうか？</li>
+      <li>テクスチャーのWrap Modeについて理解しましょう</li>
+      <li>時間経過で色々な色にしてみましょう<br>
+        <img src="image/texturebrightpacchi.gif" alt=""></li>
+    </ol>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <h1>UV情報を使ってテクスチャーから色を読み取る</h1>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><a href="../">目次へ戻る</a></p>
+    <p><br>
+    </p>
+  </body>
+</html>
