@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE">
+    <title>シェーディングの基礎</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+       
+    </style>
+  </head>
+  <body>
+    <p class="title">シェーディングの基礎</p>
+    <p>3D CGでオブジェクト表面に陰影を付けることを<strong>シェーディング</strong>といいます（もともと、「シェーダー」という単語はここから来ている）。</p>
+    <p>基礎的なシェーディングを自分で書いて、シェーディングの原理を理解しましょう。</p>
+    <h1>法線</h1>
+    <h2>法線とは</h2>
+    <p>シェーディングを行うには、法線が重要なので、まず法線の話をします。</p>
+    <p><strong>法線（Normal）とは、ある面に対して垂直な線のこと</strong>です。</p>
+    <p><img src="image/normal.jpg" alt="" style="width: 362px; height: 220px;"><br>
+      引用：<a href="http://maya.indyzone.jp/2017/02/06/maya%E5%88%9D%E5%BF%83%E8%80%85%E5%90%91%E3%81%91%E3%80%80%E3%80%8C%E6%B3%95%E7%B7%9A%E3%81%A3%E3%81%A6%E3%81%AA%E3%81%AB%EF%BC%9F%E3%80%8D/"
+        target="_blank">http://maya.indyzone.jp/2017/02/06/maya%E5%88%9D%E5%BF%83%E8%80%85%E5%90%91%E3%81%91%E3%80%80%E3%80%8C%E6%B3%95%E7%B7%9A%E3%81%A3%E3%81%A6%E3%81%AA%E3%81%AB%EF%BC%9F%E3%80%8D/</a></p>
+    <br>
+    <p><strong>3Dの世界においては、面の向きを表すために法線を使います</strong>（法線がわかれば、面がどちらを向いているかがわかるため）。</p>
+    <p>3D CGでは、頂点単位で法線が設定され、頂点データに格納されます。</p>
+    <h2>法線を使う</h2>
+    <p>Unityのシェーダーで法線を扱うには、頂点シェーダーの入力変数に<code>NORMAL</code>セマンティクスを付けます。</p>
+    <p>法線の向きを色に変換して表示するシェーダーを書いてみましょう。ポイントとなる部分を黄色で強調しています。緑色は解説です。</p>
+    <p class="source">Shader "MyShader/NormalToColor"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float3 normal : NORMAL;</em>&nbsp; <span
+        style="color: #219a43;">←</span><span style="color: #219a43;"> NORMALセマンティクスを付けると法線ベクトル（オブジェクト空間）が取得できる。長さは1。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float4 color : COLOR0;</em>&nbsp; <span
+        style="color: #219a43;">← COLOR0というセマンティクスに深い意味は無い。頂点シェーダーからフラグメントシェーダーに情報を渡すにあたって、何かしらのセマンティクスを設定しなければならない。COLOR0やTEXCOORD0などが使われる。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert (appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>o.color = float4(v.normal, 1);</em>&nbsp; <span
+        style="color: #219a43;">← 法線をfloat4に変換（詳細後述）</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag (v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return <em>i.color</em>;&nbsp; <span
+        style="color: #219a43;">← 頂点シェーダーから渡された色情報を出力</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p><img src="image/NormalToColor1.png" alt=""></p>
+    <p><br>
+    </p>
+    <p>解説します。</p>
+    <p><br>
+    </p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert (appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.color = <em>float4(v.normal, 1)</em>;&nbsp; <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p>上記の黄色部分ですが、下記のように書くのと同じことです。このような書き方はシェーダーではよくやるので、覚えておきましょう。</p>
+    <p class="source">float4(v.normal.x, v.normal.y, v.normalz, 1)</p>
+    <p><br>
+    </p>
+    <p><strong>現状のシェーダーでは、法線はオブジェクト空間</strong>です。<br>
+      オブジェクトを回転しても、面の色は変わりません。</p>
+    <p><img src="image/ObjectNormal.gif" alt=""></p>
+    <h2>法線をワールド空間に変換する</h2>
+    <p>しかし、<strong>シェーダーで法線を利用するときはワールド空間になっていたほうが使いやすい</strong>ので、<strong>法線をワールド空間に変換</strong>しましょう。黄色部分が追加・変更分です。</p>
+    <p class="source">Shader "MyShader/NormalToColor"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>#include "UnityCG.cginc"</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normal : NORMAL;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color : COLOR0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert (appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float3 worldNormal = UnityObjectToWorldNormal(v.normal);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.color = float4(<em>worldNormal</em>, 1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag (v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return i.color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>解説します。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #include "UnityCG.cginc"</p>
+    <p>この部分は、下記の<code>UnityObjectToWorldNormal()</code>を使うために必要です。</p>
+    <p><br>
+    </p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 worldNormal = UnityObjectToWorldNormal(v.normal);</p>
+    <p><code>UnityObjectToWorldNormal()</code>はオブジェクト空間の法線をワールド空間に変換してくれる機能です。</p>
+    <p><br>
+    </p>
+    <p>これで、法線がワールド空間になります。</p>
+    <p><img src="image/WorldNormal.gif"></p>
+    <p>面がワールドのどちらを向いているかによって色が決まるようになりました。</p>
+    <br>
+    <p class="column"><b>ワールド変換行列をかけるのでは駄目なのか？</b><br>
+      <br>
+      上記で、オブジェクト空間の法線をワールド空間に変換する際に、<code>UnityObjectToWorldNormal()</code>という機能を使っていますが、オブジェクト空間からワールド空間に変換するのであれば、単純にワールド変換行列をかければ良いのでは？ と思うかもしれません。<br>
+      結論からいうと、それでは駄目なのです。<br>
+      今回は、法線ベクトルを<b>回転させたいだけ</b>なのですが、<b>ワールド変換行列をかけると、移動やスケールまで適用されて、期待する結果とまるで異なるベクトルとなってしまいます</b>。移動やスケールを無視して回転だけ反映させるのは地味に面倒です。また、全体的にスケールしたのではなく、特定の方向にスケールしている場合はとても厄介です。そのため、<code>UnityObjectToWorldNormal()</code>という機能が用意されています。ありがたく使わせてもらいましょう。</p>
+    <p><br>
+    </p>
+    <h1>シェーディングの基本原理</h1>
+    <h2>基本的な考え方</h2>
+    <p>オブジェクトの表面に陰影を付けるには、どうしたら良いのでしょうか？</p>
+    <p>最も基本的な考え方は、</p>
+    <p><strong>光と垂直な面は明るい。<br>
+        光のほうを向いていない面は暗い。</strong></p>
+    <p>というものです。</p>
+    <img src="image/Lighting.png" alt="">
+    <p>当たり前ですね。</p>
+    <p>つまり、<strong>面がどれくらい光のほうを向いているか</strong>がわかれば、明るさが決められます。<br>
+      このような判定によく使うのが<strong>ベクトルの内積</strong>です。</p>
+    <h2>ベクトルの内積</h2>
+    <p>ベクトルの内積にはいくつか特徴があるのですが、<strong>内積の計算に使う2つのベクトルが両方とも単位ベクトル（長さ1）である場合、その特徴はとてもシンプル</strong>です。</p>
+    <ul>
+      <li><strong>2つのベクトルが全く同じ方向を向いていれば1</strong></li>
+      <li><strong>2つのベクトルが垂直ならば0</strong></li>
+      <li><strong>2つのベクトルが正反対の方向を向いていれば-1</strong></li>
+    </ul>
+    <p>となります。まあ、単純にコサインの値なんですが。</p>
+    <p><img src="image/cosine-graph.svg" alt=""></p>
+    <p>引用：<a href="https://www.mathsisfun.com/algebra/trig-sin-cos-tan-graphs.html"
+        target="_blank">https://www.mathsisfun.com/algebra/trig-sin-cos-tan-graphs.html</a></p>
+    <p><br>
+    </p>
+    <p>つまり、2つのベクトルが単位ベクトルである場合、内積は「<strong>2つのベクトルの向きがどれだけ似ているかを表すもの</strong>」として機能します。</p>
+    <p><strong>内積のこの特徴は極めて重要なので、必ず覚えておいてください</strong>。</p>
+    <p><br>
+    </p>
+    <h1>ランバートシェーディング</h1>
+    <h2>作ってみる</h2>
+    <p>では、ベクトルの内積を使って、シェーディングを行いましょう。</p>
+    <p>このときのポイントですが、光の向きをベクトルで表現するときに、下図の黄色矢印ではなく、赤矢印で表現します。</p>
+    <p><img src="image/Lighting2.png" alt=""> </p>
+    <p>光の進む方向（黄色矢印）ではなく、光源のある方向を示すベクトル（赤矢印）を使って計算します。</p>
+    <p><br>
+    </p>
+    <p class="source">Shader "MyShader/Lambert"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #include "UnityCG.cginc"<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normal : NORMAL;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color : COLOR0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float3 lightDir = float3(0, 1, 0);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 worldNormal = UnityObjectToWorldNormal(v.normal);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float3 color = dot(lightDir, worldNormal);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.color = float4(color, 1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return i.color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>解説します。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 lightDir = float3(0, 1, 0);</p>
+    <p>この部分は、光の方向を表しています。真上を向くベクトルです。<br>
+      光の進む方向の逆を表しているので、つまり、真上から真下に向かって光が降り注いでいるイメージです。</p>
+    <p><br>
+    </p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 color = dot(lightDir, worldNormal);</p>
+    <p>ここで、光のベクトルと法線ベクトルの内積を計算しています。<code>dot()</code>は組み込み関数で、非常に高速に内積を計算することができます。</p>
+    <p><br>
+    </p>
+    <p>これで、上を向いている面ほど明るくなるシェーダーの完成です。</p>
+    <p><img src="image/Lambert.png" alt=""></p>
+    <p><br>
+    </p>
+    <p>なお、このシェーディング技法は<strong>ランバート</strong>といい、古くからある、最も基本的なシェーディング技法です。</p>
+    <br>
+    <h2>練習問題</h2>
+    <ol>
+      <li>左から光が当たるようにしましょう</li>
+      <li>右から光が当たるようにしましょう</li>
+      <li>斜め上から光が当たるようにしましょう<br>
+        （ヒント：normalize()を使うと、ベクトルを正規化できます。引数にベクトルを与えてください）</li>
+    </ol>
+    <p><br>
+    </p>
+    <h2>シーンのライト情報を取得する</h2>
+    <h1>フォンシェーディング</h1>
+    <h1>色の計算を頂点シェーダーでやるかフラグメントシェーダーでやるか</h1>
+    <p>グーローシェーディング<br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+      <br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><a href="../">目次へ戻る</a></p>
+    <p><br>
+    </p>
+  </body>
+</html>

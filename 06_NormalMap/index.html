@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE">
+    <title>ノーマルマップ</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+       
+    </style>
+  </head>
+  <body>
+    <p class="title">ノーマルマップ</p>
+    <p>ノーマルマップについて、そしてノーマルマップの使い方について学びましょう。</p>
+    <h1>ノーマルマップとは</h1>
+    <p></p>
+    <p><strong>ノーマルマップとは、オブジェクト表面の細かい凹凸を表現するための特殊なテクスチャーです</strong>。</p>
+    <p>オブジェクト表面の細かい凹凸を全てポリゴンで表現しようとすると、あっという間に数千万～数億ポリゴンになってしまい、リアルタイムで描画できなくなってしまいます。<br>
+      そこで、ポリゴンの数を増やさずに表面の細かい凹凸を表現するために編み出された技術がノーマルマップです。</p>
+    <p>物体表面の向き（法線）を、ノーマルマップと呼ばれるテクスチャー画像に書き込みます。</p>
+    <p>表面を基準とした座標空間での法線の向き（X, Y, Z）を画像の色情報（R, G, B）に格納します。</p>
+    <p><img src="image/NTBFromUVs.png" alt=""></p>
+    引用：<a href="http://www.opengl-tutorial.org/jp/intermediate-tutorials/tutorial-13-normal-mapping/"
+      target="_blank">http://www.opengl-tutorial.org/jp/intermediate-tutorials/tutorial-13-normal-mapping/</a><br>
+    <p>なお、この表面を基準とした座標空間のことを接空間（Tangent Space）と呼びます。</p>
+    <p>表面が平らである場合、面の法線は上図の青い矢印と同じ向きになります。<br>
+      赤矢印がX、緑矢印がY、青矢印がZなので、それぞれを画像の色情報（RGB）に格納すると、(0.5, 0.5, 1)となり、水色っぽい画像になります。</p>
+    <p>なぜ、X(R)とY(G)が0ではなく0.5なのかというと、画像の色情報は0～255までしか格納できない（マイナスの値は格納できない）ため、0.5を中心とするように下駄が履かされています。つまり、0.5は実質0で、0は実質マイナスを表します。</p>
+    <p>ちなみに、上図の<strong>赤矢印を接線（Tangent）と呼び、緑矢印を従法線（Binormal）と呼びます</strong>。<br>
+      一般的に、接線はUV座標のU方向、従法線はV方向とします。</p>
+    <br>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+      <br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><a href="../">目次へ戻る</a></p>
+    <p><br>
+    </p>
+  </body>
+</html>

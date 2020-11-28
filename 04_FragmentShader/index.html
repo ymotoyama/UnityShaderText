@@ -121,8 +121,9 @@
       &nbsp;&nbsp;&nbsp; }</p>
     この部分は、プロパティブロックといいます。<br>
     ここにパラメーターを定義すると、Unityエディター上にマテリアルのパラメーターとして表示されるようになります。<br>
-    今回はテクスチャー画像をUnity側から受け取るために、_MainTexという名前のパラメーターを定義しています。<br>
-    その他の説明は<a href="https://amagamina.jp/unity-shader/#Properties" target="_blank">こちら</a>が詳しいです。<br>
+    今回はテクスチャー画像をUnity側から受け取るために、_MainTexという名前のパラメーターを定義しています。（名前は自由です）<br>
+    プロパティに関するその他の説明は<a href="https://amagamina.jp/unity-shader/#Properties"
+      target="_blank">こちら</a>が詳しいです。<br>
     <p>プロパティブロックでパラメーターを定義するだけではシェーダー内で使えません。プロパティブロックで定義したものと同名の変数をシェーダー内で定義しておく必要があります。それが以下の部分です：</p>
     <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;</p>
     <p>プロパティブロックで定義したものと同名の変数を、対応した型で定義しておくと、自動的に内容が代入され、頂点シェーダーやフラグメントシェーダー内で使えるようになります。</p>
@@ -135,7 +136,7 @@
     <p>UV座標とは、テクスチャー画像上での位置を表す座標系です。<br>
       <img src="image/uvcoord.png" alt="" style="width: 387px; height: 383px;"></p>
     <p>Uが横軸で、Vが縦軸です。</p>
-    <p>名前が「U」と「V」であることに深い意味はなく、XやYを使ってしまうと、頂点座標と混ざって混乱するので、空いてるUとVを割り当てただけらしいです。</p>
+    <p>名前が「U」と「V」であることに深い意味はなく、XやYを使ってしまうと、頂点座標と混ざって混乱するので、使っていない文字であるUとVを割り当てただけらしいです。</p>
     <h2>練習問題</h2>
     <ol>
       <li>紺色にしましょう</li>
@@ -153,6 +154,235 @@
     <p><br>
     </p>
     <h1>UV情報を使ってテクスチャーから色を読み取る</h1>
+    <p>では、モデリング時にモデルに設定されたUV情報を使って、テクスチャーをモデルの表面に正しく表示させましょう。<br>
+      ここから急に情報が増えるので頑張りましょう。</p>
+    <h2>UVマッピングとは？</h2>
+    <p>そもそもUVマッピングとは何かをおさらいしましょう。</p>
+    <p>UVマッピングとは、3Dモデルをモデリングする際に、モデルのどの位置にテクスチャー画像のどの部分を表示するのかを設定することです。</p>
+    <img src="image/uvmapping.jpg" alt="" style="width: 536px; height: 302px;">
+    <p>頂点単位で、画像のどこを表示すべきかを表すUV座標が設定され、頂点データに格納されます。</p>
+    <p>ちなみに、テクスチャーを2重～3重に使って凝った表現をする場合もあり、その場合は、各頂点につき、UV座標をその数だけ持つことになります。</p>
+    <p>また、頂点データには、頂点座標やUV座標以外にも、法線や頂点カラーなどが格納できます。</p>
+    <h2>シンプルなテクスチャーシェーダー</h2>
+    <p>テクスチャーを正しく表示するシェーダーです。ポイントとなる部分を黄色で強調します。</p>
+    <p class="source">Shader "MyShader/SimpleTexture"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; _MainTex("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      <em>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; struct appdata<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; };</em><br>
+      <br>
+      <em>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; struct v2f<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; };</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      <em>&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; o.uv = v.uv;</em><br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float4 frag(<em>v2f i</em>) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; return tex2D(_MainTex, <em>i.uv</em>);<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p><img src="image/SimpleTexture.png" alt=""></p>
+    <p><br>
+    </p>
+    <p>今回のシェーダーから、頂点データから取得する情報が2つになりました。<code>頂点座標</code>と<code>UV座標</code>です。</p>
+    <p>単純に頂点シェーダー関数vertの引数を2つにして受け取ることも可能ですが、一般的には入力構造体を定義します。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</p>
+    <p>入力構造体の名前は任意ですが、通常は<code>appdata</code>とします。</p>
+    <p>変数名は任意です。</p>
+    <p><code>:</code>より右はセマンティクスです。<br>
+      <code>POSITION</code>は頂点座標、<code>TEXCOORD0</code>はUV座標を表します。<br>
+      その他の指定可能なセマンティクスは<a href="https://amagamina.jp/unity-shader/#i-9"
+        target="_blank">こちら</a>を参照してください。</p>
+    <p>この構造体の型を頂点シェーダー関数の引数に指定することにより、頂点座標とUV座標が取得できます。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p>次に、構造体<code>v2f</code>を定義しています：</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</p>
+    <p>この構造体の用途は2つです。</p>
+    <ol>
+      <li>頂点シェーダー関数の戻り値</li>
+      <li>フラグメントシェーダーの引数</li>
+    </ol>
+    <p>名前の<code>v2f</code>は<code>Vertex to Fragment</code>を表しています。ちなみに、名前は自由ですが、Unityにおいては普通は<code>v2f</code>にします。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p>頂点シェーダー関数の引数で構造体<code>appdata</code>を指定することで、頂点座標とUV座標が格納済みの構造体を受け取ることができます。</p>
+    <p>頂点座標はオブジェクト空間なので、クリップ空間に変換してからv2f構造体に格納します。</p>
+    <p>UV座標はそのままv2f構造体に格納します。</p>
+    <p>ちなみに、<code>v2f</code>構造体の変数名が<code>o</code>ですが、これは<code>Output</code>の頭文字です。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p>フラグメントシェーダー関数の引数で<code>v2f</code>構造体を指定することにより、頂点シェーダー関数で出力された<code>v2f</code>の内容を受け取ることができます。<br>
+      ただし、頂点シェーダー関数<code>vert</code>の戻り値がそのままフラグメントシェーダー関数<code>frag</code>に渡されるわけではありません。<br>
+      頂点シェーダーの出力結果は、ラスタライザーによってピクセル単位の情報となり、各変数（uvなど）は自動的に補間された後、フラグメントシェーダーに渡されます。</p>
+    <p><img src="image/pipeline.gif">　<img src="image/rasterize.gif"></p>
+    <p><br>
+    </p>
+    <h2>練習問題</h2>
+    <h3><br>
+    </h3>
+    <p>テクスチャーをずらしてみましょう。</p>
+    <p><img src="image/uvscroll.gif" alt=""></p>
+    <p>ぱっちぃでやってもあまり意味はありませんが、このようにUV座標をずらすことを<strong>UVスクロール</strong>といい、主にエフェクトや背景（ベルトコンベアなど）でよく使われるテクニックです。</p>
+    <p><img src="image/uvscroll2.gif" alt=""></p>
+    <p>引用：<a href="https://www.youtube.com/watch?v=ZwVJIqOkxBU" target="_blank">https://www.youtube.com/watch?v=ZwVJIqOkxBU</a></p>
+    <br>
+    <h3><br>
+    </h3>
+    <p>フラグメントシェーダーを次のように書き換えてみましょう。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; return float4(i.uv.x, i.uv.y, 0, 1);<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; }</p>
+    <p>そして、描画結果を確認しましょう。</p>
+    <p>なぜそうなったのか、納得できるまで考えましょう。</p>
+    <p><img src="image/displayuv.png" alt=""></p>
+    <p><br>
+    </p>
+    <p>ぱっちぃのテクスチャーと照らし合わせて考えましょう：</p>
+    <img src="image/pacchi.png" alt="" style="width: 405px; height: 405px;">
+    <p><br>
+    </p>
+    <h1>スケーリングとオフセット</h1>
+    <p>現状、下記の値は描画に反映されていません：</p>
+    <p><img src="image/TilingAndOffset.png" alt=""></p>
+    <p>これらのパラメーターを反映させるシェーダーにしたい場合は、次のようにします。黄色部分が追加・変更箇所です。</p>
+    <p class="source">Shader "MyShader/SimpleTexture"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; _MainTex("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <em>#include "UnityCG.cginc"</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <em>float4 _MainTex_ST;</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; o.uv = <em>TRANSFORM_TEX(v.uv, _MainTex)</em>;<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; return tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <img src="image/tiling.gif" alt="">
+    <p><br>
+    </p>
+    <p>解説していきます。</p>
+    <p><br>
+    </p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #include "UnityCG.cginc"</p>
+    <p><code>#include</code>は、C言語のincludeと同様に、別のファイルの内容をそのまま持ってくる機能です。<br>
+      今回指定されている<code>UnityCG.cginc</code>というファイルには、Unityが用意した様々な便利機能があらかじめ定義されています。<br>
+      今回は、後述する<code>TRANSFORM_TEX()</code>のために使っています。</p>
+    <p><br>
+    </p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 _MainTex_ST;</p>
+    <p>Unityエディター上で設定したTilingとOffsetの値（下記画像）が格納される変数です。</p>
+    <p><img src="image/TilingAndOffset.png" alt=""></p>
+    <p><br>
+    </p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = TRANSFORM_TEX(v.uv, _MainTex);</p>
+    <p><code>TRANSFORM_TEX()</code>は<code>UnityCG.cginc</code>に定義されたマクロです。<br>
+      <code>_MainTex_ST</code>に格納されたTilingとOffsetの値を基に、第1引数（今回は<code>v.uv</code>）のuv座標をずらしてくれるものです。</p>
+    <p>以下のような定義になっているようです：</p>
+    <p class="source">#define TRANSFORM_TEX(tex,name) (tex.xy * name##_ST.xy + name##_ST.zw)</p>
+    単純に、UV座標をTiling倍したあとOffset分だけずらしているだけです。<br>
+    <p><br>
+        <br>
+    </p>
     <p><br>
     </p>
     <p><br>
