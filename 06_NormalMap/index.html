@@ -41,27 +41,286 @@
       <li>Substanceなどのマテリアル作成ツールで作成する</li>
       <li>実写写真からツールで生成する</li>
     </ol>
-    <p>ちなみに、上記の砂利の地面のノーマルマップは、3番の「実写写真からツールで生成する」という手法で作られました。CRAZYBUMPという有料ソフトを使って本山が作りました。</p>
+    <p>ちなみに、上記の砂利の地面のノーマルマップは、3番の「実写写真からツールで生成する」という手法で作られました。本山が地面の写真をデジカメで撮影し、CRAZYBUMPという有料ソフトを使って作りました。</p>
+    <p>地面の写真↓</p>
+    <p><img src="image/jari-albedo.png" alt="" style="width: 451px; height: 451px;"> </p>
+    <h1>ノーマルマップをシェーディングに反映させる</h1>
+    <p><img src="image/normalsample.gif" alt=""></p>
+    <p>ノーマルマップをシェーディングに反映させてみましょう。</p>
+    <p>けっこう難しいので、頑張ってついてきてくください！</p>
+    <h2>画像の準備</h2>
+    <p>このノーマルマップ画像を右クリックで保存してください。</p>
+    <p><img src="image/jari-normal.png" alt="" style="width: 249px; height: 249px;"></p>
     <p><br>
     </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
+    <p>Unityのプロジェクトにインポートします。</p>
+    <p>設定をNormal Mapにします。</p>
+    <p><img src="image/ImportSettings.png" alt=""></p>
+    <br>
+    <h2>ノーマルマップの読み込み</h2>
+    <p class="source">Shader "MyShader/NormalMap"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _NormalMap("Normal Map", 2D) = "normal" {}<br>
+      &nbsp;&nbsp;&nbsp; }<br>
       <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #include "UnityCG.cginc"<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex&nbsp; : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex&nbsp;&nbsp; : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // オブジェクト空間の頂点座標をクリップ空間に変換<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; // UV座標はそのまま出力構造体に渡す<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ノーマルマップの内容を取得<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normalMap = tex2D(_NormalMap, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ノーマルマップの内容をそのまま色として出力<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(normalMap, 1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p>マテリアルを作成し、このシェーダーをマテリアルにセットし、オブジェクトに適用してみてください。</p>
+    <p><img src="image/red.png" alt=""> </p>
+    <p>ノーマルマップが表面に反映されるものの、なぜか赤くなってしまいます（実行環境によっては赤くならないかもしれません）。</p>
+    <p>この理由は、Unityがノーマルマップを自動的に<code>DXT5nm</code>というフォーマットに変換するからです。これにより、容量が削減され、メモリが節約できます。テクスチャは、解像度によっては、1枚で数十MBになりますからね。</p>
+    <p>で、このままだと法線として使えないので、元の形式に戻す必要があります。次のようにします。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ノーマルマップの内容を取得<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normalMap = <em>UnpackNormal(</em>tex2D(_NormalMap, i.uv)<em>)</em>;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ノーマルマップの内容をそのまま色として出力<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(normalMap, 1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p><code>UnpackNormal()</code>はUnityの組み込み関数で、ノーマルマップに格納された法線ベクトルの情報を使いやすい形に戻します。<br>
+      R, G, B (X, Y, Z)の各要素がそれぞれ <code>-1～1</code> に変換されます。</p>
+    <p><code>0～1</code>ではなく、<code>-1～1</code>です。そのため、元のノーマルマップ画像よりも濃い青になります。</p>
+    <p><img src="image/2020-12-03_13h55_36.png" alt=""></p>
+    <h2>法線をワールド空間に変換する</h2>
+    <p>ノーマルマップの内容を読み取ることはできましたが、ノーマルマップから読み取った現状の法線は、接空間のものです。<br>
+      これをシェーディングに使用するためには、どうすれば良いでしょうか？</p>
+    <p>以下のような方法が考えられます。</p>
+    <ol>
+      <li>光線ベクトル（ライトの方角）を接空間に変換して、接空間でライティングする</li>
+      <li>接空間の法線ベクトルをワールド空間に変換して、ワールド空間でライティングする</li>
+      <li>光線ベクトルも法線ベクトルもオブジェクト空間に変換して、オブジェクト空間でライティングする</li>
+    </ol>
+    <p><br>
+    </p>
+    <p>今回は、<strong>2番の「接空間の法線ベクトルをワールド空間に変換して、ワールド空間でライティングする」でいきましょう</strong>。</p>
+    <p class="source">Shader "MyShader/NormalMap"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _NormalMap("Normal Map", 2D) = "normal" {}<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #include "UnityCG.cginc"<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex&nbsp; : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : TEXCOORD0;<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normal&nbsp; : NORMAL;&nbsp;&nbsp;&nbsp; // 頂点の法線<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 tangent : TANGENT;&nbsp;&nbsp; // 頂点の接線</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex&nbsp;&nbsp; : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : TEXCOORD0;<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normal&nbsp;&nbsp; : TEXCOORD1; // 頂点の法線<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 tangent&nbsp; : TEXCOORD2; // 頂点の接線<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 binormal : TEXCOORD3; // 頂点の従法線</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // オブジェクト空間の頂点座標をクリップ空間に変換<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // UV座標はそのまま出力構造体に渡す<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 従法線を求める（まだ接空間）<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.binormal = normalize(cross(v.normal.xyz, v.tangent.xyz) * v.tangent.w * unity_WorldTransformParams.w);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 法線をワールド空間に変換<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.normal = UnityObjectToWorldNormal(v.normal);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 接線をワールド空間に変換<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.tangent = UnityObjectToWorldDir(v.tangent.xyz);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 従法線をワールド空間に変換<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.binormal = UnityObjectToWorldDir(o.binormal);</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ノーマルマップの内容を取得<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normalMap = UnpackNormal(tex2D(_NormalMap, i.uv));<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ノーマルマップから読み取った法線ベクトル（接空間）をワールド空間に変換する<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 worldNormal = (i.tangent * normalMap.x) + (i.binormal * normalMap.y) + (i.normal * normalMap.z);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ワールド空間に変換した法線ベクトルをそのまま色として出力<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(worldNormal, 1);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <br>
+    <p>まず、頂点シェーダーの入力構造体について説明します。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex&nbsp; : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normal&nbsp; : NORMAL;&nbsp;&nbsp;&nbsp; // 頂点の法線<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 tangent : TANGENT;&nbsp;&nbsp; // 頂点の接線<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</p>
+    <p>頂点の法線と接線を取得するようにしました。<br>
+      <code>NORMAL</code>セマンティクスで法線、<code>TANGENT</code>セマンティクスで接線がしゅとくできます。<br>
+      法線、接線、従法線はモデリングの時点で決まるので、頂点入力データとして受け取ることができます。<br>
+      ただし、従法線に関しては、Unityでは、マルチプラットフォーム対応の関係で取得できないようです。<br>
+      従法線はシェーダープログラム内で導出する必要があります。</p>
+    <p><br>
+    </p>
+    <p>次は頂点シェーダーからフラグメントシェーダーに情報を受け渡すv2f構造体について。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex&nbsp;&nbsp; : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normal&nbsp;&nbsp; : TEXCOORD1; // 頂点の法線<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 tangent&nbsp; : TEXCOORD2; // 頂点の接線<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 binormal : TEXCOORD3; // 頂点の従法線<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</p>
+    <p>頂点シェーダーで法線、接線、従法線をワールド空間に変換したいので、変換後の情報をフラグメントシェーダーに渡すために、項目を追加しました。<br>
+      セマンティクスの<code>TEXCOORD1</code>～<code>TEXCOORD3</code>に深い意味はありません。なんなら<code>COLOR0</code>や<code>COLOR1</code>を指定しても大丈夫です。とにかく、重複しないように何らかのセマンティクスを指定する必要があります。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p>次は頂点シェーダーを見ていきましょう。</p>
+    <p class="source">// 法線をワールド空間に変換<br>
+      o.normal = UnityObjectToWorldNormal(v.normal);<br>
+      // 接線をワールド空間に変換<br>
+      o.tangent = UnityObjectToWorldDir(v.tangent.xyz);</p>
+    <p>オブジェクト空間の法線をワールド空間に変換する箇所は以前もやった通りなので解説は割愛します。</p>
+    <p>接線をワールド空間に変換する箇所は、法線の処理と似ていますが、<code>UnityObjectToWorldNormal()</code>ではなく<code>UnityObjectToWorldDir()</code>という関数を使っています。<br>
+      この2つの関数の働きはとても似ていて、もしオブジェクトがスケールしていないか、もしくは軸ごとのスケール値が等しい場合は、2つの関数はまったく同じ動きになります。<br>
+      軸ごとにスケール値が異なる場合にのみ違いが出てきます。<br>
+      <code>UnityObjectToWorldDir()</code>を使って法線の向きを変換すると、軸ごとのスケール値が等しい場合は問題ありませんが、軸ごとにスケール値が異なる場合におかしくなってしまうのです。</p>
+    <p><img src="image/UnityObjectToWorldDirTest1.gif" alt=""></p>
+    <p>↑上が<code>UnityObjectToWorldNormal()</code>で法線を変換したシェーダー、下が<code>UnityObjectToWorldDir()</code>で法線を変換したシェーダーです。<br>
+      このように、軸ごとのスケール値が等しい場合は、どちらを使っても同じ結果になります。</p>
+    <p><br>
+    </p>
+    <p><img src="image/UnityObjectToWorldDirTest2.gif" alt=""></p>
+    <p>しかし、軸ごとのスケール値が異なる場合、このように、結果が異なってしまいます。上の<code>UnityObjectToWorldNormal()</code>を使っているほうが正しい結果です。</p>
+    <p>ちなみに、<code>UnityObjectToWorldNormal()</code>より<code>UnityObjectToWorldDir()</code>のほうが計算が単純で負荷が低いため、軸ごとに異なるスケール値を設定しないことがわかっている場合は、あえて<code>UnityObjectToWorldDir()</code>を使うことで軽量化が図れます。<br>
+      （軸ごとにスケール値を変えると、大抵は見栄えが悪くなるため、あまりやらないと思います。）</p>
+    <p><br>
+    </p>
+    <p>従法線を求めるプログラムを見てみましょう。</p>
+    <p class="source">// 法線と接線の外積から従法線を求める<br>
+      o.binormal = normalize(cross(o.normal.xyz, o.tangent.xyz));</p>
+    <code>cross()</code>はベクトルの外積を計算する組み込み関数です。<br>
+    <p>
+      <strong>ベクトルの外積は、2つのベクトルから1つのベクトルを求める計算です。結果のベクトルは、元の2つのベクトル両方と直行するという特徴があります</strong>。</p>
+    <p><img src="image/cross.jpg" alt="" style="width: 217px; height: 169px;"><br>
+    </p>
+    <p>引用：<a href="https://risalc.info/src/vector-product-orthogonal.html">https://risalc.info/src/vector-product-orthogonal.html</a></p>
+    <br>
+    <p><img src="image/NTBFromUVs.png" alt=""><br>
+      法線、接線、従法線はそれぞれ直行してます。そのため、<code>cross()</code>で法線（上図の青）と接線（上図の赤）の外積を求めることで、従法線を求めています。
+    </p>
+    外積を使うと、2つのベクトルに直行するベクトルが得られるので、法線と接線の外積を求めると、従法線となります。<br>
+    <p>ただし、そのままでは、向きが逆向きになっている可能性があります。これは実行環境によります（OpenGLかDirectXか、など）。<br>
+      それを補正するための値が、Unityによって<code>v.tangent.w</code>と<code>unity_WorldTransformParams.w</code>に格納されています。これらの変数には、実行環境に応じて<code>-1</code>か<code>+1</code>が格納されており、それを従法線にかけることで、正しい向きにすることができます。</p>
+    <p class="source">// 環境による従法線の向きの違いを修正<br>
+      o.binormal *= v.tangent.w * unity_WorldTransformParams.w;</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p>次はフラグメントシェーダーです。</p>
+    <p class="source">// ノーマルマップから読み取った法線ベクトル（接空間）をワールド空間に変換する<br>
+      float3 worldNormal = (i.tangent * normalMap.x) + (i.binormal * normalMap.y) + (i.normal * normalMap.z);</p>
+    <p>ここで、接空間の法線ベクトルをワールド空間に変換しています。</p>
+    <p style="background-color: white;">ノーマルマップに格納された法線ベクトルは、接空間のX軸（接線）、Y軸（従法線）、Z軸（法線）を使って表現されたベクトルです。</p>
+    <p><img src="image/NTBFromUVs.png" alt=""></p>
+    <p>そして、今回、接空間のX軸、Y軸、Z軸をワールド空間に変換したベクトルは算出済みです（それぞれ、<code>i.tangent</code>、<code>i.binormal</code>、<code>i.normal</code>）。</p>
+    <p>ノーマルマップに格納された法線ベクトルのX, Y, Zの値は、各軸に対する量を表しているので、法線ベクトルのX, Y, Zをワールド空間に変換済みのX軸、Y軸、Z軸にかけてあげれば、ワールド空間に変換されます。</p>
+    <p>ネットなどで調べると、接空間の法線ベクトルをワールド空間に変換するために、変換行列を使うサンプルコードが多く出てきますが、変換行列を使うより、こちらの方法のほうが単純で高速です。</p>
+    <p><br>
+    </p>
+    <p>以上で、ワールド空間の法線ベクトルが取得できました。<br>
+      オブジェクトをぐるぐる回転させて、正しくワールド空間の法線となっていることを確認しましょう。</p>
+    <p><img src="image/worldNormal.gif" alt=""></p>
+    <p>ワールド空間にまで変換できれば、あとは以前<a href="../05_BasicShading/">シェーディング</a>のところで学んだ手法で、シェーディングを行うことができます！</p>
+    <h1>練習問題</h1>
+    <h3><br>
+    </h3>
+    <p>ランバードシェーディングを適用してください。</p>
+    <p><img src="image/Diffuse.gif" alt=""></p>
+    <p><br>
+    </p>
+    <h3><br>
+    </h3>
+    <p>ブリンフォンモデルによるスペキュラーを適用してください。</p>
+    <p><img src="image/Specular.gif" alt=""></p>
+    <p>※↑スペキュラーの効果がわかりやすいように、ランバートの効果を調整しています。</p>
+    <p><br>
+    </p>
+    <h3><br>
+    </h3>
+    <p>カラーテクスチャーも適用してください。</p>
+    <img src="image/Color.gif" alt="">
+    <p>このテクスチャーを使ってください↓</p>
+    <p><img src="image/jari-albedo.png" alt="" style="width: 330px; height: 330px;"></p>
+    <p><br>
+    </p>
+    <p><br>
     </p>
     <p><br>
     </p>
