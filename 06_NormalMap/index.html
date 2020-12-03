@@ -20,16 +20,17 @@
     <img src="image/jari-normal.png" alt="" style="width: 450px; height: 450px;">
     <p>物体表面の向き（法線の向き）を、ノーマルマップと呼ばれるテクスチャー画像に書き込みます。<br>
       具体的には、法線ベクトルのX, Y, Zを画像の色情報（R, G, B）に格納します。 <br>
-      <img src="image/NTBFromUVs.png" alt=""></p>
-    引用：<a href="http://www.opengl-tutorial.org/jp/intermediate-tutorials/tutorial-13-normal-mapping/"
-      target="_blank">http://www.opengl-tutorial.org/jp/intermediate-tutorials/tutorial-13-normal-mapping/</a><br>
-    <p>このとき、法線ベクトルを表現する座標空間は、オブジェクト空間ではありません。上図のように、面に沿った座標空間になります。<br>
-      この座標空間のことを<strong>接空間（Tangent Space）</strong>と呼びます。<br>
-      赤矢印がX軸、緑矢印がY軸、青矢印がZ軸です。</p>
+    </p>
+    <p>このとき、法線ベクトルを表現する座標空間は、オブジェクト空間ではありません。面に沿った座標空間になります。<br>
+      この座標空間のことを<strong>接空間（Tangent Space）</strong>と呼びます。</p>
+    <p><img src="image/NTBFromUVs.png" alt=""> </p>
+    <p>引用：<a href="http://www.opengl-tutorial.org/jp/intermediate-tutorials/tutorial-13-normal-mapping/"
+        target="_blank">http://www.opengl-tutorial.org/jp/intermediate-tutorials/tutorial-13-normal-mapping/</a></p>
+    <p>赤矢印がX軸、緑矢印がY軸、青矢印がZ軸です。</p>
     <p>表面に凹凸が無く平らである場合、面の法線は上図の青い矢印と同じ向きになります。<br>
       法線ベクトルのX, Y, Zそれぞれをノーマルマップ画像のピクセル（RGB）に格納すると、(0.5, 0.5, 1)となります。<br>
       大抵、法線ベクトルはそれに近い値になるため、ノーマルマップは全体的に水色っぽい画像になるというわけです。</p>
-    <img src="image/normal.png" alt="" style="width: 618px; height: 234px;">
+    <img src="image/normal.png" alt="" style="width: 702px; height: 265px;">
     <p>なぜ、X(R)とY(G)が0ではなく0.5なのかというと、画像の色情報は0～255までしか格納できない（マイナスの値は格納できない）ため、0.5を中心とするように下駄が履かされています。つまり、ノーマルマップ上の0.5は実質0です。</p>
     <p>ちなみに、上図の<strong>赤矢印を接線（Tangent）と呼び、緑矢印を従法線（Binormal）と呼びます</strong>。<br>
       一般的に、接線はUV座標のU方向、従法線はV方向とします。</p>
@@ -133,13 +134,13 @@
       これをシェーディングに使用するためには、どうすれば良いでしょうか？</p>
     <p>以下のような方法が考えられます。</p>
     <ol>
-      <li>光線ベクトル（ライトの方角）を接空間に変換して、接空間でライティングする</li>
-      <li>接空間の法線ベクトルをワールド空間に変換して、ワールド空間でライティングする</li>
-      <li>光線ベクトルも法線ベクトルもオブジェクト空間に変換して、オブジェクト空間でライティングする</li>
+      <li>光線ベクトル（ライトの方角）を接空間に変換して、接空間でライトの計算を行う</li>
+      <li>接空間の法線ベクトルをワールド空間に変換して、ワールド空間でライトの計算を行う</li>
+      <li>光線ベクトルも法線ベクトルもオブジェクト空間に変換して、オブジェクト空間でライトの計算を行う</li>
     </ol>
     <p><br>
     </p>
-    <p>今回は、<strong>2番の「接空間の法線ベクトルをワールド空間に変換して、ワールド空間でライティングする」でいきましょう</strong>。</p>
+    <p>今回は、<strong>2番の「接空間の法線ベクトルをワールド空間に変換して、ワールド空間でライトの計算を行う」でいきましょう</strong>。</p>
     <p class="source">Shader "MyShader/NormalMap"<br>
       {<br>
       &nbsp;&nbsp;&nbsp; Properties<br>
@@ -183,15 +184,15 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // オブジェクト空間の頂点座標をクリップ空間に変換<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // UV座標はそのまま出力構造体に渡す<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
-      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 従法線を求める（まだ接空間）<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.binormal = normalize(cross(v.normal.xyz, v.tangent.xyz) * v.tangent.w * unity_WorldTransformParams.w);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<em><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 法線をワールド空間に変換<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.normal = UnityObjectToWorldNormal(v.normal);<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 接線をワールド空間に変換<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.tangent = UnityObjectToWorldDir(v.tangent.xyz);<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 従法線をワールド空間に変換<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.binormal = UnityObjectToWorldDir(o.binormal);</em><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 法線と接線の外積から従法線を求める<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.binormal = normalize(cross(o.normal.xyz, o.tangent.xyz));<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; // 環境による従法線の向きの違いを修正<br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; o.binormal *= v.tangent.w * unity_WorldTransformParams.w;</em><br>
       <br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
@@ -247,9 +248,8 @@
       o.tangent = UnityObjectToWorldDir(v.tangent.xyz);</p>
     <p>オブジェクト空間の法線をワールド空間に変換する箇所は以前もやった通りなので解説は割愛します。</p>
     <p>接線をワールド空間に変換する箇所は、法線の処理と似ていますが、<code>UnityObjectToWorldNormal()</code>ではなく<code>UnityObjectToWorldDir()</code>という関数を使っています。<br>
-      この2つの関数の働きはとても似ていて、もしオブジェクトがスケールしていないか、もしくは軸ごとのスケール値が等しい場合は、2つの関数はまったく同じ動きになります。<br>
-      軸ごとにスケール値が異なる場合にのみ違いが出てきます。<br>
-      <code>UnityObjectToWorldDir()</code>を使って法線の向きを変換すると、軸ごとのスケール値が等しい場合は問題ありませんが、軸ごとにスケール値が異なる場合におかしくなってしまうのです。</p>
+      この2つの関数の働きはとても似ていて、もしオブジェクトがスケールしていないか、もしくは軸ごとのスケール値が等しい場合は、2つの関数はまったく同じ結果になります。<br>
+      軸ごとにスケール値が異なる場合にのみ違いが出てきます。<code>UnityObjectToWorldDir()</code>を使って法線の向きを変換すると、軸ごとにスケール値が異なる場合に不正な結果となってしまうのです。</p>
     <p><img src="image/UnityObjectToWorldDirTest1.gif" alt=""></p>
     <p>↑上が<code>UnityObjectToWorldNormal()</code>で法線を変換したシェーダー、下が<code>UnityObjectToWorldDir()</code>で法線を変換したシェーダーです。<br>
       このように、軸ごとのスケール値が等しい場合は、どちらを使っても同じ結果になります。</p>
@@ -258,27 +258,25 @@
     <p><img src="image/UnityObjectToWorldDirTest2.gif" alt=""></p>
     <p>しかし、軸ごとのスケール値が異なる場合、このように、結果が異なってしまいます。上の<code>UnityObjectToWorldNormal()</code>を使っているほうが正しい結果です。</p>
     <p>ちなみに、<code>UnityObjectToWorldNormal()</code>より<code>UnityObjectToWorldDir()</code>のほうが計算が単純で負荷が低いため、軸ごとに異なるスケール値を設定しないことがわかっている場合は、あえて<code>UnityObjectToWorldDir()</code>を使うことで軽量化が図れます。<br>
-      （軸ごとにスケール値を変えると、大抵は見栄えが悪くなるため、あまりやらないと思います。）</p>
+      （軸ごとにスケール値を変えると見栄えが悪くなるため、普通はあまりやらないと思います。つまり大抵は<code>UnityObjectToWorldDir()</code>でも問題ない）</p>
     <p><br>
     </p>
     <p>従法線を求めるプログラムを見てみましょう。</p>
     <p class="source">// 法線と接線の外積から従法線を求める<br>
       o.binormal = normalize(cross(o.normal.xyz, o.tangent.xyz));</p>
     <code>cross()</code>はベクトルの外積を計算する組み込み関数です。<br>
-    <p>
-      <strong>ベクトルの外積は、2つのベクトルから1つのベクトルを求める計算です。結果のベクトルは、元の2つのベクトル両方と直行するという特徴があります</strong>。</p>
+    <p> <strong>ベクトルの外積は、2つのベクトルから1つのベクトルを求める計算です。結果のベクトルは、元の2つのベクトル両方と直行するという特徴があります</strong>。</p>
     <p><img src="image/cross.jpg" alt="" style="width: 217px; height: 169px;"><br>
     </p>
     <p>引用：<a href="https://risalc.info/src/vector-product-orthogonal.html">https://risalc.info/src/vector-product-orthogonal.html</a></p>
     <br>
     <p><img src="image/NTBFromUVs.png" alt=""><br>
-      法線、接線、従法線はそれぞれ直行してます。そのため、<code>cross()</code>で法線（上図の青）と接線（上図の赤）の外積を求めることで、従法線を求めています。
-    </p>
-    外積を使うと、2つのベクトルに直行するベクトルが得られるので、法線と接線の外積を求めると、従法線となります。<br>
-    <p>ただし、そのままでは、向きが逆向きになっている可能性があります。これは実行環境によります（OpenGLかDirectXか、など）。<br>
-      それを補正するための値が、Unityによって<code>v.tangent.w</code>と<code>unity_WorldTransformParams.w</code>に格納されています。これらの変数には、実行環境に応じて<code>-1</code>か<code>+1</code>が格納されており、それを従法線にかけることで、正しい向きにすることができます。</p>
+      法線、接線、従法線はそれぞれ直行してます。そのため、<code>cross()</code>で法線（上図の青）と接線（上図の赤）の外積を計算すると、従法線が導き出されます。 </p>
+    ただし、そのままでは、従法線の向きが逆向きになっている可能性があります。これは実行環境によります（OpenGLなのかDirectXなのか、など）。<br>
+    <p> それを補正するための値が、Unityによって<code>v.tangent.w</code>と<code>unity_WorldTransformParams.w</code>に格納されています。これらの変数には、実行環境に応じて<code>-1</code>か<code>+1</code>が格納されており、それを従法線にかけることで、正しい向きにすることができます。</p>
     <p class="source">// 環境による従法線の向きの違いを修正<br>
       o.binormal *= v.tangent.w * unity_WorldTransformParams.w;</p>
+    <p>※なぜ、2つもかけないといけないのかは、よくわかっていません…</p>
     <p><br>
     </p>
     <p><br>
