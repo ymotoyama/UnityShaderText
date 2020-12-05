@@ -301,7 +301,8 @@
     <img src="image/pacchi.png" alt="" style="width: 405px; height: 405px;">
     <p><br>
     </p>
-    <h1>スケーリングとオフセット</h1>
+    <h1>TilingとOffset</h1>
+    <h2>TilingとOffsetの適用</h2>
     <p>現状、下記の値は描画に反映されていません：</p>
     <p><img src="image/TilingAndOffset.png" alt=""></p>
     <p>これらのパラメーターを反映させるシェーダーにしたい場合は、次のようにします。黄色部分が追加・変更箇所です。</p>
@@ -380,8 +381,21 @@
     <p>以下のような定義になっているようです：</p>
     <p class="source">#define TRANSFORM_TEX(tex,name) (tex.xy * name##_ST.xy + name##_ST.zw)</p>
     単純に、UV座標をTiling倍したあとOffset分だけずらしているだけです。<br>
+    <h2>TilingとOffsetを無効にする</h2>
+    <p>壁や床などのシェーダーではTilingやOffsetが便利なことがありますが、キャラクターなどのシェーダーではTilingやOffsetはあまり使わないでしょう。<br>
+      そのようなシェーダーでは、UnityのInspectorにTilingとOffsetの項目を表示してほしくありません。<br>
+      プロパティの定義の箇所で<code>[NoScaleOffset]</code>を指定することで、TilingとOffsetを非表示にすることができます。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>[NoScaleOffset]</em> _MainTex("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp; }</p>
     <p><br>
-      <br>
+    </p>
+    <img src="image/NoScaleOffset.png" alt="">
+    <p><br>
+    </p>
+    <br>
+    <p> <br>
     </p>
     <p><br>
     </p>
