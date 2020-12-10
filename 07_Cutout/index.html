@@ -25,7 +25,7 @@
       {<br>
       &nbsp;&nbsp;&nbsp; Properties<br>
       &nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex ("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex ("Main Texture", 2D) = "white" {}<br>
       &nbsp;&nbsp;&nbsp; }<br>
       <br>
       &nbsp;&nbsp;&nbsp; SubShader<br>
@@ -138,7 +138,7 @@
       この場合、「何かめっちゃ重い処理」がスキップされるかどうかは、実行環境によって異なるということです。<br>
       実行環境によっては、色は出力されないものの、何かめっちゃ重い処理が実行される可能性があるのです。<br>
       <br>
-      なお、本山の手元の環境で実行したところ、discardおよびclipした後の処理はスキップされていました。</p>
+      なお、本山の手元の環境（Windows10, GTX1050, Unity2019.4）で実行したところ、discardおよびclipした後の処理はスキップされていました。</p>
     <p><br>
     </p>
     <h2>しきい値の調整</h2>
@@ -150,7 +150,7 @@
       {<br>
       &nbsp;&nbsp;&nbsp; Properties<br>
       &nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex ("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex ("Main Texture", 2D) = "white" {}<br>
       <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Threshold ("Alpha Threshold", Range(0, 1)) = 0.5</em><br>
       &nbsp;&nbsp;&nbsp; }<br>
       <br>
@@ -209,7 +209,7 @@
       {<br>
       &nbsp;&nbsp;&nbsp; Properties<br>
       &nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex ("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex ("Main Texture", 2D) = "white" {}<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Threshold ("Alpha Threshold", Range(0, 1)) = 0.5<br>
       &nbsp;&nbsp;&nbsp; }<br>
       <br>
@@ -236,12 +236,162 @@
     <p>適切に指定しないとたまにおかしなことが起こるので、それぞれの描画に合ったものを指定するようにしましょう。</p>
     <p><br>
     </p>
-    <h1>スライス</h1>
+    <h1>スライスシェーダー</h1>
     <p><code>discard</code>や<code>clip</code>を使って、輪切りにするような表現をしてみましょう。</p>
+    <h2>スライスシェーダー</h2>
+    <p class="source">Shader "MyShader/Slice"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex ("Main Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags {"Queue" = "AlphaTest" "RenderType" = "TransparentCutout"}<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 pos : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 clipPos : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 worldPos : TEXCOORD1;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert (appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.clipPos = UnityObjectToClipPos(v.pos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.worldPos = mul(UNITY_MATRIX_M, v.pos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>clip(frac(i.worldPos.y) - 0.5);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><img src="image/2020-12-10_22h10_15.png" alt=""></p>
+    <p><code>frac</code>関数はシェーダーの組み込み関数であり、<strong>小数点以下のみを取り出す</strong>関数です。<br>
+      例えば、引数に1.234という数値を渡すと、戻り値として0.234が返却されます。<br>
+      <strong>frac関数はシェーダーでよく使うので覚えておいてください</strong>。</p>
+    <p><code>frac</code>関数に対して、ワールド座標を渡したときの戻り値のイメージとしては次のようになります。</p>
+    <p><img src="image/2020-12-10_22h16_23.png" alt=""></p>
+    <p>1以上になると0に戻る、ノコギリの刃のような形状になります。</p>
+    <p>この値から0.5を引くと、次のようになります。</p>
+    <p><img src="image/2020-12-10_23h20_21.png" alt=""></p>
+    <p>この値を<code>clip</code>関数の引数にしているため、値が0未満の高さではピクセルが描画されません。</p>
+    <br>
     <p><br>
     </p>
+    <h2>周期を変える</h2>
+    <p>フラグメントシェーダーを少し改造します。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; clip(frac(i.worldPos.y<em> * 5</em>) - 0.5);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p><img src="image/2020-12-10_22h19_57.png" alt=""></p>
     <p><br>
     </p>
+    <p>ワールド座標のyに5をかけています。すると、グラフは次のようになります。</p>
+    <img src="image/2020-12-10_23h14_42.png" alt=""><br>
+    <p>この、<strong>値をかけることによって周期を変える</strong>ということはシェーダーでよくやるので、覚えておいてください。</p>
+    <h2>練習問題</h2>
+    <ul>
+      <li>時間でスライスの位置が変わるようにしてみましょう</li>
+      <li>しましまの周期や透明・不透明の割合をプロパティにしてUnity上から調整できるようにしましょう</li>
+    </ul>
+    <img src="image/sliceq.gif" alt="">
+    <p><br>
+    </p>
+    <h1>ディゾルブシェーダー</h1>
+    <p>どこをカットアウトするかの指定にテクスチャーを使用し、まだらに消えていくようにしたのがディゾルブシェーダーです。</p>
+    <p><img src="image/dissolve.gif" alt=""></p>
+    <p>最近のゲームでは、敵が死んだり、物が燃えて消滅したりするときの演出としてよく使われています。</p>
+    <p><br>
+    </p>
+    <p class="source">Shader "MyShader/Dissolve"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex("Main Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _DissolveTex("Dissolve Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _DissolveAmount("Dissolve Amount", Range(0, 1)) = 0.5<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Scale("Scale", Float) = 1<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _DissolveTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _DissolveAmount;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _Scale;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // グレースケール画像なので、RGBどれも同じ。とりあえずR要素を使う。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float d = tex2D(_DissolveTex, i.uv / _Scale).r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // _DissolveAmount(ディゾルブ度合い）がDissolveテクスチャーの明るさを超えていたら透明に<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; clip(d - _DissolveAmount);<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>ディゾルブの画像にはこれを使ってください。</p>
+    <p><img src="image/Dissolve.png" alt="" style="width: 447px; height: 447px;"> </p>
+    <p><br>
+    </p>
+    <br>
     <p><br>
     </p>
     <p><br>
