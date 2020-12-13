@@ -11,7 +11,10 @@
   </head>
   <body>
     <p class="title">カットアウト（切り抜き）</p>
-    <p>カットアウト（切り抜き）シェーダーを学びます。</p>
+    <p>カットアウト（切り抜き）シェーダーを学びます。<br>
+      後半では、オブジェクトをスライス（輪切り）したり、ディゾルブさせたりするシェーダーを作ります。</p>
+    <p><img src="image/2020-12-10_22h19_57.png" alt="">　<img src="image/dissolvehdr.gif"
+        alt=""></p>
     <h1>基本のカットアウトシェーダー</h1>
     <h2>カットアウトしない場合</h2>
     <p>この柵のテクスチャーをゲーム中に表示させましょう。</p>
@@ -323,12 +326,154 @@
     <img src="image/sliceq.gif" alt="">
     <p><br>
     </p>
+    <p class="column"><b>計算結果をグラフにして可視化しよう</b><br>
+      <br>
+      フラグメントシェーダーでは、上記のように、frac()を使ったり、かけたり、足したり、引いたり…様々な計算を行って値をいじくります。<br>
+      慣れてくると、結果が頭の中で想像できるようになるのですが、慣れないうちは大変です。そのようなときは、グラフによる可視化が役に立ちます。<br>
+      上記でグラフの画像が掲載されていますが、そのグラフは<a href="mailto:https://www.iquilezles.org/apps/graphtoy/"
+        target="_blank">Graphtoy</a>というWebサイトで作ったものです。<br>
+      シェーダーに慣れないうちは（慣れても複雑な計算を行うときは）使ってみてください。</p>
+    <a href="mailto:https://www.iquilezles.org/apps/graphtoy/" target="_blank"> </a>
     <h1>ディゾルブシェーダー</h1>
     <p>どこをカットアウトするかの指定にテクスチャーを使用し、まだらに消えていくようにしたのがディゾルブシェーダーです。</p>
     <p><img src="image/dissolve.gif" alt=""></p>
     <p>最近のゲームでは、敵が死んだり、物が燃えて消滅したりするときの演出としてよく使われています。</p>
+    <h2>基本のディゾルブシェーダー<br>
+    </h2>
+    <p class="source">Shader "MyShader/Dissolve"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex("Main Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _DissolveTex("Dissolve Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _DissolveAmount("Dissolve Amount", Range(0, 1)) = 0.5<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags {"Queue" = "AlphaTest" "RenderType" = "TransparentCutout"}<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _DissolveTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _DissolveAmount;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // グレースケール画像なので、RGBどれも同じ。とりあえずR要素を使う。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float d = tex2D(_DissolveTex, i.uv).r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // _DissolveAmount(ディゾルブ度合い）がDissolveテクスチャーの明るさを超えていたら描画しない<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; _DissolveAmount)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; discard;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // テクスチャーから色を取得<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
     <p><br>
     </p>
+    <p>ディゾルブの画像にはこれを使ってください。</p>
+    <p><img src="image/Dissolve.png" alt="" style="width: 447px; height: 447px;"></p>
+    <p>プロパティ<code>DissolveAmount</code>を調節することで、上記画像の黒いところから白いところに向かって穴が開いていきます。</p>
+    <p><br>
+    </p>
+    <h2>模様の幅の変更</h2>
+    <p class="source">Shader "MyShader/Dissolve"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex("Main Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _DissolveTex("Dissolve Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _DissolveAmount("Dissolve Amount", Range(0, 1)) = 0.5<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>_Scale("Scale", Float) = 1</em><br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags {"Queue" = "AlphaTest" "RenderType" = "TransparentCutout"}<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _DissolveTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _DissolveAmount;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float _Scale;</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // グレースケール画像なので、RGBどれも同じ。とりあえずR要素を使う。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float d = tex2D(_DissolveTex, i.uv<em> / _Scale</em>).r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // _DissolveAmount(ディゾルブ度合い）がDissolveテクスチャーの明るさを超えていたら描画しない<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; _DissolveAmount)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; discard;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // テクスチャーから色を取得<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>Unityエディター上から<code>Scale</code>の値を変更することで、ディゾルブの模様の大きさを変更できるようになりました。</p>
+    <p><img src="image/dissolvescale.gif" alt=""> </p>
+    <p><br>
+    </p>
+    <h2>境目を燃えるような表現にする</h2>
+    <p>普通に描画されている部分と切り抜かれている部分の境目の色を変更することによって、燃えて消えていくような表現にしてみましょう。</p>
     <p class="source">Shader "MyShader/Dissolve"<br>
       {<br>
       &nbsp;&nbsp;&nbsp; Properties<br>
@@ -337,10 +482,14 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _DissolveTex("Dissolve Texture", 2D) = "white" {}<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _DissolveAmount("Dissolve Amount", Range(0, 1)) = 0.5<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Scale("Scale", Float) = 1<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _BrightColor("Bright Color", Color) = (1, 1, 1, 1)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _BrightWidth("Bright Width", Range(0, 1)) = 0.15</em><br>
       &nbsp;&nbsp;&nbsp; }<br>
       <br>
       &nbsp;&nbsp;&nbsp; SubShader<br>
       &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags {"Queue" = "AlphaTest" "RenderType" = "TransparentCutout"}<br>
+      <br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
@@ -363,6 +512,8 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _DissolveTex;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _DissolveAmount;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _Scale;<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 _BrightColor;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _BrightWidth;</em><br>
       <br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
@@ -376,22 +527,219 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // グレースケール画像なので、RGBどれも同じ。とりあえずR要素を使う。<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float d = tex2D(_DissolveTex, i.uv / _Scale).r;<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // _DissolveAmount(ディゾルブ度合い）がDissolveテクスチャーの明るさを超えていたら透明に<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; clip(d - _DissolveAmount);<br>
-      <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // _DissolveAmount(ディゾルブ度合い）がDissolveテクスチャーの明るさを超えていたら描画しない<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; _DissolveAmount)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; discard;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // テクスチャーから色を取得<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = tex2D(_MainTex, i.uv);<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // しきい値付近を光らせる<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; _DissolveAmount + _BrightWidth)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color += float4(_BrightColor.xyz, 0);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
       &nbsp;&nbsp;&nbsp; }<br>
       }</p>
-    <p><br>
-    </p>
-    <p>ディゾルブの画像にはこれを使ってください。</p>
-    <p><img src="image/Dissolve.png" alt="" style="width: 447px; height: 447px;"> </p>
-    <p><br>
-    </p>
     <br>
+    <p><img src="image/2020-12-12_23h19_34.png" alt=""></p>
+    <p>切り抜かれる場所の周囲の色が変わるようになりました。</p>
+    <p><code>BrightColor</code>で色が変えられます。</p>
+    <p><code>BrightWidth</code>で色が変わる範囲の大きさを調節できます。</p>
+    <p><br>
+    </p>
+    <h2>しきい値の計算の修正</h2>
+    <p>上記の変更により、ひとつ、不具合が発生してしまいました。<br>
+      <code>DissolveAmount</code>を0にしても、燃えるような表現がわずかに発生してしまうのです。</p>
+    <p><img src="image/2020-12-12_23h23_45.png" alt=""></p>
+    <p><code>BrightWidth</code>の分だけ、しきい値の計算の調整を行う必要があります。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // グレースケール画像なので、RGBどれも同じ。とりあえずR要素を使う。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float d = tex2D(_DissolveTex, i.uv / _Scale).r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>// 明るくする幅の分、しきい値を調整する</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float threshold = _DissolveAmount * (1 + _BrightWidth) - _BrightWidth;</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // _DissolveAmount(ディゾルブ度合い）がDissolveテクスチャーの明るさを超えていたら描画しない<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; <em>threshold</em>)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; discard;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // テクスチャーから色を取得<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // しきい値付近を光らせる<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; <em>threshold</em> + _BrightWidth)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color += float4(_BrightColor.xyz, 0);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p>これで、<code>DissolveAmount</code>が0のときは、燃えるような表現が出ないようになりました。</p>
+    <p><br>
+    </p>
+    <h2>HDRカラーとポストエフェクト</h2>
+    <p>HDRカラーとポストエフェクトを使うことで、燃えるているときのまぶしさを表現することができます。</p>
+    <h3>HDRカラー</h3>
+    <p>まず、プロパティの<code>_BrightColor</code>に<code>[HDR]</code>属性を追加します。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex("Main Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _DissolveTex("Dissolve Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _DissolveAmount("Dissolve Amount", Range(0, 1)) = 0.5<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Scale("Scale", Float) = 1<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>[HDR] </em>_BrightColor("Bright Color", Color) = (1, 1, 1, 1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _BrightWidth("Bright Width", Range(0, 1)) = 0.15<br>
+      &nbsp;&nbsp;&nbsp; }</p>
+    <p>すると、Unityエディター上で、色をHDRで指定可能になります。</p>
+    <p><img src="image/2020-12-12_23h32_45.png" alt=""> </p>
+    <p>これで、色のRGB値を、0～255の256段階ではなく、浮動小数によって表現可能になり、白<code>(255, 255, 255)</code>より明るい色を内部的に表現できます。</p>
+    <p>上図のカラーピッカーで設定した色が、どのような値となってシェーダーに渡るかは、かなりややこしいのです。<br>
+      カラーピッカー上で0～255のRGBAの値は、0～1の範囲に変換されます。<br>
+      <code>Intensity</code>の値は、2の指数となって、RGB値にかけられるようです。つまり、シェーダーに渡されるRGB値の例えばRは次のようになります。</p>
+    <p><code>R * 2^Intensity</code></p>
+    <p>例えば、上図のカラーピッカーで<code>（255, 0, 0, 255）</code>、<code>Intensity=2</code>と設定した場合、シェーダーには<code>(4, 0, 0, 1)</code>というfloat4型の値となって渡されます（※アルファ値はIntensityの影響を受けない）。</p>
+    <p>なお、HDRを使うには、プロジェクト設定でHDRが有効になっている必要があります。<br>
+      最近のUnityではデフォルトで有効であるはずですが、念のため確認しておきましょう。</p>
+    <ul>
+      <li>ProjectSettings＞Graphics＞各TierのUse HDRがONになっている</li>
+      <li>CameraのHDRが<code>Use Graphics Settings</code>になっている</li>
+    </ul>
+    <p>さて、白<code>(255, 255, 255)</code>より明るい色が表現できるようになったといっても、それはあくまで計算時の話であり、モニターに出力するときには、結局、RGBのそれぞれが0～255の表現で出力しなければなりません（モニターがそれにしか対応していないから）。</p>
+    <h3>ポストエフェクトのBloom</h3>
+    <p>そこで、ポストエフェクトの<strong>Bloom</strong>の出番です。Bloomで明るい部分をにじませることによって、本当にまぶしいように見せかけることができます。</p>
+    <p><b>Bloomの使い方の手順</b></p>
+    <ol>
+      <li>Package Managerから<code>Post Processing Stack</code>をインストールする</li>
+      <li>新規Layerを作る。名前は「PostProcess」などとしておく</li>
+      <li>空のオブジェクトを作成する。名前は「PostProcessVolume」とする</li>
+      <li>レイヤーをPostProcessにする</li>
+      <li><code>PostProcessVolume</code>コンポーネントをアタッチする</li>
+      <li><code>PostProcessVolume</code>の<code>Is Global</code>をONにする（Scene内では常に1つのポストエフェクトの設定を使う場合はこうする。同一Scene内でも場所によってポストエフェクトの効果を変える場合、<code>Is Global</code>はオフにしてColliderをアタッチする）</li>
+      <li><code>Profile</code>の<code>New</code>を押す</li>
+      <li><code>Add effect...</code>からBloomを選択する</li>
+      <li>Main Cameraに<code>PostProcessLayer</code>をアタッチする</li>
+      <li><code>PostProcessLayer</code>のLayerをPostProcessにする</li>
+      <li>あとは<code>BrightColor</code>および<code>PostProcessVolume</code>の<code>Bloom</code>を調整する</li>
+    </ol>
+    <p><br>
+    </p>
+    <img src="image/dissolvehdr.gif" alt="">
+    <p><br>
+    </p>
+    <h1>スクリプトからプロパティを変更する</h1>
+    <p><code>Renderer</code>に設定されている<code>Material</code>を取得し、<code>Material</code>に対して<code>SetFloat()</code>などを呼び出すことにより、C#スクリプトからシェーダーのプロパティを変更することができます。</p>
+    <p>次のスクリプトは、オブジェクトがクリックされたらディゾルブで消すものです。</p>
+    <p class="source">using System.Collections;<br>
+      using System.Collections.Generic;<br>
+      using UnityEngine;<br>
+      <br>
+      public class DissolveTest : MonoBehaviour<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; public float m_Duration = 2f; // 消えるまでに要する時間（秒）<br>
+      &nbsp;&nbsp;&nbsp; float m_DissoveAmount = 0;<br>
+      &nbsp;&nbsp;&nbsp; Material m_Material;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; private void Start()<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_Material = GetComponentInChildren&lt;Renderer&gt;().material;<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; void OnMouseDown()<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; StartCoroutine(Dissolve());<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; IEnumerator Dissolve()<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(m_DissoveAmount &lt; 1f)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_DissoveAmount += 1f / m_Duration * Time.deltaTime;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_Material.SetFloat("_DissolveAmount", m_DissoveAmount);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; yield return null;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p>※オブジェクトにColliderを付けるのを忘れずに…。</p>
+    <p><br>
+    </p>
+    <p><img src="image/dissolvefromscript.gif"></p>
+    <p><br>
+    </p>
+    <p>上記で使った<code>SetFloat()</code>の他にも、渡したいデータの型に応じて、様々なメソッドが用意されています。</p>
+    <p><code>SetFloat()</code>以外によく使うものは、</p>
+    <ul>
+      <li>SetColor()</li>
+      <li>SetVector()</li>
+    </ul>
+    <p>あたりでしょうか。それ以外は<a href="https://docs.unity3d.com/ja/current/ScriptReference/Material.html"
+        target="_blank">Materialのマニュアル</a>を参照してください。</p>
+    <p><br>
+    </p>
+    <h1>練習問題</h1>
+    <p>テレポートシェーダーを作ってください。</p>
+    <img src="image/teleport.gif" alt=""><br>
+    <h1>if文を使うな！？</h1>
+    <p>4章のディゾルブシェーダーではシェーダー内でif文を使っていますが、「<strong>シェーダーではなるべくif文を使うな</strong>」という意見がそこかしこから聞こえてきます。<br>
+      「シェーダーは並列処理によって高速に動いているのに、if文で分岐するとうまく並列で処理できなくなるから遅くなる」という内容です。<br>
+      そうはいっても、if文を使わずにディゾルブのような凝ったシェーダーを書くことなどできるのでしょうか？</p>
+    <p>実は、できるのです。<br>
+      例えば、4章で作ったディゾルブシェーダーのフラグメントシェーダー</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // グレースケール画像なので、RGBどれも同じ。とりあえずR要素を使う。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float d = tex2D(_DissolveTex, i.uv / _Scale).r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 明るくする幅の分、しきい値を調整する<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float threshold = _DissolveAmount * (1 + _BrightWidth) - _BrightWidth;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // _DissolveAmount(ディゾルブ度合い）がDissolveテクスチャーの明るさを超えていたら描画しない<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; threshold)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; discard;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // テクスチャーから色を取得<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // しきい値付近を光らせる<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; threshold + _BrightWidth)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color += float4(_BrightColor.xyz, 0);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p>これはif文をまったく使わずに書くことができます。次のようになります。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // グレースケール画像なので、RGBどれも同じ。とりあえずR要素を使う。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float d = tex2D(_DissolveTex, i.uv / _Scale).r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 明るくする幅の分、しきい値を調整する<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float threshold = _DissolveAmount * (1 + _BrightWidth) - _BrightWidth;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // _DissolveAmount(ディゾルブ度合い）がDissolveテクスチャーの明るさを超えていたら描画しない<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>clip(d - threshold);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // テクスチャーから色を取得<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // しきい値付近を光らせる<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>int flag = step(d, threshold + _BrightWidth);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>color += lerp(float4(0, 0, 0, 0), float4(_BrightColor.xyz, 0), flag);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p><br>
+    </p>
+    <p><code>step</code>という関数が登場しました。これは、第2引数が第1引数未満であれば0、第1引数以上であれば1を返却する関数です。<br>
+      つまり、次のようなイメージです：</p>
+    <p class="source">float step(float a, float b)<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; if (a &lt;= b)<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 1;<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; else<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 0;<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>さらに、<code>lerp</code>関数も登場しました。これはおなじみのやつです。第3引数で指定された割合で、第1引数と第2引数をブレンドします。<br>
+      第3引数が0であれば完全に第1引数を、第3引数が1であれば完全に第2引数を返却します。</p>
+    <p><code>step</code>と<code>lerp</code>を組み合わせて、<code>d</code>が<code>threshold + _BrightWidth</code>未満であれば、<code>color</code>に<code>_BrightColor</code>を加算するようにしています。<br>
+      このように<code>step</code>と<code>lerp</code>を組み合わせて条件分岐のようなことをさせることは、シェーダープログラミングではよく使われるテクニックです。</p>
+    <p>しかし、慣れないと非常にややこしいですよね…。シェーダーではif文は使わずに、常にこのような書き方をしなければならないのでしょうか？</p>
+    <p>実は、昔であればそうでしたが、最近は必ずしもそうとはいえなくなってきたようです。<br>
+      if文を使うと本当に遅くなるのかどうかは、シェーダーのコンパイラおよび実行環境によります。<br>
+      最近の実行環境、特にPCにおいては、上記のif文を使っているほうのシェーダー程度の単純なものであれば、速度を落とさずに実行できるようです。<br>
+      また、シェーダーのコンパイラも賢くなっているため、自動的に効率的なアセンブリコードに変換されます。<br>
+      実際、本山の環境（Windows10、Unity2019.4、GTX1050）では、速度は変わらないか、if文を使った書き方のほうがむしろわずかに速かったです。</p>
+    <p>では、皆さんはどうすれば良いのか、ですが、シェーダーを練習中でまだ慣れていない場合は、とりあえずif文を使って素直に書けば良いと思います。<br>
+      シェーダーを書くことに慣れてきて、実用的なシェーダーを書くとき、特にモバイル向けの場合はif文による速度低下がありえるので、この章の内容を思い出し、できれば実際に動作させて速度を比較することが望ましいです。</p>
     <p><br>
     </p>
     <p><br>
