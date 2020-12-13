@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE">
+    <title>半透明</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+       
+    </style>
+  </head>
+  <body>
+    <p class="title">半透明</p>
+    <p></p>
+    コンピューターの描画の仕組みに詳しくない人が思うほど、半透明の描画は簡単なことではありません。<br>
+    このページでは、半透明描画を行うために必要な知識を学んでいきます。<br>
+    <h1>デプスバッファ</h1>
+    <h2>デプスバッファとは</h2>
+    <p>3D CGが描画されるとき、フラグメントシェーダーが色をカラーバッファに書き込みます（カラーバッファとは、画面のピクセルの数と同じ数だけ色情報を格納できるメモリ領域）。<br>
+      そのとき同時に、<strong>デプスバッファと呼ばれるメモリ領域に、塗ったピクセルの深度値（カメラから見た奥行きの情報）が格納されます</strong>。<br>
+      デプスバッファのイメージとしては、カラーバッファと同様に画面のピクセルの数だけ情報を格納できるものですが、色ではなく深度値を格納するものになります。<br>
+      深度値は0～1の値を取ります。（なお、0と1のどちらが近くでどちらが遠くかなのかは、環境によって異なります）。</p>
+    <img src="image/1280px-Z_buffer.svg.png" alt="" style="width: 400px; height: 518px;">
+    <p>デプスバッファの内容を画像として出力すると、上図の下側のようになります。<br>
+      引用：<a href="https://en.wikipedia.org/wiki/Z-buffering" target="_blank">https://en.wikipedia.org/wiki/Z-buffering</a><br>
+    </p>
+    なお、デプスバッファは「<strong>深度バッファ</strong>」や「<strong>Zバッファ</strong>」とも呼ばれます。全部覚えておきましょう。<br>
+    <h2>デプスバッファの役割</h2>
+    <p>このデプスバッファは3D描画のために非常に重要です。<br>
+      <img src="image/depth.gif" alt=""></p>
+    <p>上図では、キューブの手前にスフィアが描画されていますが、この前後関係を正しく描画するのにデプスバッファが役立っています。<br>
+      現代の3Dの描画では、並列処理で高速化するために、描画順が特に定まっていません。<br>
+      上図をレンダリングする際に、キューブとスフィアのどちらが先に描画されるかがわからないということです。<br>
+      キューブが先に描画されれば、スフィアが後から上書きで描画すれば良いので問題なさそうですが、スフィアが先に描画されてしまったら、後から描画されたキューブが上書きして手前に描画されてしまいそうです。<br>
+      しかし、そうはなりません。デプスバッファのおかげです。</p>
+    <p>フラグメントシェーダーの前工程として、「<strong>デプステスト</strong>」と呼ばれる工程が存在します。</p>
+    <p><img src="image/PipelineCullDepth.png" alt=""></p>
+    <p>引用：<a href="https://docs.unity3d.com/ja/2018.4/Manual/SL-CullAndDepth.html"
+        target="_blank">https://docs.unity3d.com/ja/2018.4/Manual/SL-CullAndDepth.html</a></p>
+    <p>デプステストでは、デプスバッファをチェックし、今描画しようとしているピクセルに深度値が書き込まれているかをチェックします。<br>
+      深度値が書き込まれていなければ、テストは合格となり、フラグメントシェーダーに進みます。<br>
+      深度値が書き込まれている場合、既に書き込まれている深度値と今描画しようとしているピクセルの深度値を比較します。<br>
+      今描画しようとしているピクセルのほうが手前の場合、テストは合格となり、フラグメントシェーダーに進みます。<br>
+      今描画しようとしているピクセルのほうが奥の場合、テストは不合格となり、フラグメントシェーダーはスキップされ、描画は行われません。<br>
+      （なお、これらはデフォルトの挙動であり、カスタマイズできます）</p>
+    <p>この仕組みにより、オブジェクトの前後関係を気にせずに描画を行うことができるのです。</p>
+    <p>わざとデプステストを無効にすると、次のように前後関係がおかしくなってしまいます。</p>
+    <img src="image/depthoff.gif" alt="">
+    <p><br>
+    </p>
+    <p class="column"><b>昔は無かった</b><br>
+      <br>
+      便利なデプスバッファですが、3D黎明期はありませんでした。<br>
+      例えば、初代プレイステーションなどにはありませんでした。<br>
+      そのため、プログラムでソートしてから距離順に描画していたそうです。</p>
+    <h2>半透明との相性の悪さ</h2>
+    <p>このように便利なデプスバッファ法ですが、半透明描画との相性は悪いです。<br>
+      デプスバッファ法は、オブジェクトが不透明であることを前提としています。最終結果のピクセルには1つのオブジェクトの色しか出力されないからです。<br>
+      しかし、半透明描画というのは、複数のオブジェクトの色が混ざり合うことを意味します。<br>
+      デプスバッファ法による「描画するか、しないか」という二元論では、半透明を実現できないのです。</p>
+    <h1>ブレンド</h1>
+    <h2>Blending</h2>
+    <p>半透明を実現するために、3Dの描画パイプラインには<strong>Blending</strong>という工程が存在します。</p>
+    <p><img src="image/PipelineCullDepth.png" alt=""></p>
+    <p>引用：<a href="https://docs.unity3d.com/ja/2019.4/Manual/SL-Blend.html"
+        target="_blank">https://docs.unity3d.com/ja/2019.4/Manual/SL-Blend.html</a></p>
+    <p>フラグメントシェーダーが出力した色と、カラーバッファに元々書き込まれていた色を混ぜる工程です。<br>
+      <strong>デフォルトでは、色を混ぜずに単純に上書きしますが、指定を行うことで様々な方法で色を混ぜることができます</strong>。</p>
+    <h2>ブレンドモード</h2>
+    <p>色のブレンドを行いたいときは、ブレンド方法を指定します。</p>
+    <p>Passブロックの中に以下の形式で記述します。</p>
+    <p class="source">Blend <span style="color: #3a37dd;"><i>SrcFactor</i> <i>DstFactor</i></span></p>
+    <p>SrcFactorはフラグメントシェーダーから出力された色にかける係数の指定です。<br>
+      DstFactorは書き込み先のカラーバッファの色にかける係数の指定です。</p>
+    <p>例えば次のように指定したとします。これは典型的な<strong>アルファブレンド</strong>です。</p>
+    <p class="source">Blend SrcAlpha OneMinusSrcAlpha</p>
+    <p><code>SrcAlpha</code>はフラグメントシェーダーから出力された色のアルファ値を表します。<br>
+      <code>OneMinusSrcAlpha</code>は1から、フラグメントシェーダーから出力された色のアルファ値を引いた値を表します。</p>
+    <p>例えば上記のブレンド設定で、既に青い色<code>（0, 0, 1, 1）</code>が書き込まれている場所に、半透明の赤<code>（1, 0, 0, 0.7）</code>を重ねて描画しようとしたとします。<br>
+      その場合、赤<code>（1, 0, 0, 1）</code>に<code>SrcAlpha</code>つまり0.7がかけられ<code>（0.7, 0, 0, 0.49）</code>となります（※アルファ値にまで0.7がかかるので注意）。<br>
+      そして青<code>（0, 0, 1, 1）</code>に<code>OneMinusSrcAlpha</code>つまり <code>1 - 0.7</code> 、つまり<code>0.3</code>がかけられて<code>（0, 0, 0.3, 0.3）</code>となります。<br>
+      最終的に、<code>（0.7, 0, 0, 0.49）</code>と<code>（0, 0, 0.3, 0.3）</code>が足されて、<code>（0.7, 0, 0.3, 0.79）</code>となります。これが最終結果の色です。</p>
+    <img src="image/2020-12-13_17h36_46.png">
+    <p>なお、アルファブレンドを行うことでアルファ値が下がってしまっています。普通に描画する分には問題ありませんが、一度レンダーテクスチャーに出力し、それを描画しようとすると、意図しない結果になったりするので注意してください（半透明のマップやホログラム風のUIを実装しようとしたときなどになりがち）。</p>
+    <p><br>
+    </p>
+    <p>今度は、次のように指定してみましょう。</p>
+    <p class="source">Blend One One</p>
+    <p>このように指定すると、カラーバッファの色と、フラグメントシェーダーが出力した色が単純に加算されます。<br>
+      いわゆる加算ブレンドです。</p>
+    <p><img src="image/2020-12-13_17h42_29.png"></p>
+    <p>この指定の場合、アルファ値は意味は結果に影響を与えません。<br>
+      アルファ値によって濃さを変えたい場合は、フラグメントシェーダーで、アルファ値をRGB値にかける必要があります。</p>
+    ブレンドに関して詳しいことは<a href="https://docs.unity3d.com/ja/2019.4/Manual/SL-Blend.html"
+      target="_blank">Unityマニュアル</a>を参照してください。
+    <h1>半透明のシェーダー</h1>
+    <p>それでは、半透明描画を行うシェーダーを作ってみましょう。ポイントとなる部分を黄色で強調しました。</p>
+    <p class="source">Shader "MyShader/Transparent"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex ("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1, 1, 1, 1)<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>Tags { "Queue" = "Transparent" "RenderType" = "Transparent" }</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>ZWrite Off</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>Blend SrcAlpha OneMinusSrcAlpha</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 _Color;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert (appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag (v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return tex2D(_MainTex, i.uv) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>最も重要なのは次の部分です。</p>
+    <p class="source">Blend SrcAlpha OneMinusSrcAlpha</p>
+    <p>この記述によりブレンドが有効になり、フラグメントシェーダーの出力した色とカラーバッファの色がブレンドされます。</p>
+    <p><br>
+    </p>
+    <p>今回、タグにて<code>Queue</code>（描画順グループ）を<code>Transparent</code>にしています。</p>
+    <p class="source">Tags { <em>"Queue" = "Transparent"</em> "RenderType" = "Transparent" }</p>
+    <p>これを指定することで、2つの効果があります。</p>
+    <ol>
+      <li>描画順が不透明オブジェクトの後になる</li>
+      <li>Transparentを指定されたオブジェクト同士は、カメラからの距離順でソートされ、遠いものから先に描画される</li>
+    </ol>
+    <p>ブレンドの仕組み上、描画の順番は極めて重要です。そのため、まず先に全ての不透明オブジェクトを描画し、その後に半透明オブジェクトをまとめて描画します。<br>
+      さらに、奥から順に描画しなければ正しくブレンドできないため、距離によるソートが行われます（これはUnityが勝手にやってくれます）。</p>
+    <p><br>
+    </p>
+    <p>最後に、この記述について説明します。</p>
+    <p class="source">ZWrite Off</p>
+    <p>これは、「デプスバッファへの深度値の書き込みを行わない」という指定です。<br>
+      不透明オブジェクトでこの指定をしてしまうと前後関係がめちゃくちゃになってしまいますが、半透明オブジェクトは距離順でソートして奥から描画するため、デプスバッファへの書き込みを行わなくても、大きな問題になりません。<br>
+      なぜこの記述が必要なのかというと、前後関係が複雑な半透明オブジェクト同士が重なったとき、奥にあるオブジェクトが消えてしまうのを防ぐためです。</p>
+    <p>わざと<code>ZWrite Off</code>の記述を<strong>行わなかった</strong>場合です↓</p>
+    <img src="image/depthon.gif" alt="">
+    <p>半透明の赤のオブジェクトに隠れた半透明の青のオブジェクトが、角度によっては消えてしまいます。</p>
+    <p>これは、<strong>描画順のソートがオブジェクト単位である</strong>ことに起因します。<br>
+      オブジェクト単位でみたとき、「赤オブジェクトのほうが奥である」と判定されたにも関わらず、「赤オブジェクトの一部が青オブジェクトより手前に来てしまったとき」に、問題が生じます。<br>
+      青オブジェクトが描画を行おうとしたときには、デプスバッファに既に赤オブジェクトの深度値が書き込まれており、重なっている部分に関しては青オブジェクトのほうが奥であるため、デプステスト不合格で描画がスキップされてしまうのです。</p>
+    <p>この問題を防ぐために、半透明オブジェクトではデプスバッファへの書き込みを行わないことが多いです。<br>
+      しかし、それはそれで別の問題を引き起こします。<br>
+      キャラクターなどの複雑な形状のオブジェクトをデプスバッファ書き込みなしの半透明で描画すると、次のようになってしまうのです。<br>
+      <img src="image/2020-12-13_18h06_08.png" alt="" style="width: 287px; height: 320px;"></p>
+    <p>引用：<a href="http://tsubakit1.hateblo.jp/entry/2015/09/07/222755"
+        target="_blank">http://tsubakit1.hateblo.jp/entry/2015/09/07/222755</a></p>
+    <p>欲しかった結果↓</p>
+    <p><img src="image/2020-12-13_18h08_01.png" alt="" style="width: 283px; height: 356px;"></p>
+    <p>引用：<a href="http://tsubakit1.hateblo.jp/entry/2015/09/09/233000"
+        target="_blank">http://tsubakit1.hateblo.jp/entry/2015/09/09/233000</a></p>
+    <p>キャラクターのような複雑な形状のものを半透明描画する場合は、かなり工夫を行う必要があります（上記リンク先を参照してください）。</p>
+    <p>このため、最近のゲームでは、なるべく半透明という表現は避けられる傾向にあります。<br>
+      どうしてもキャラクターなどを半透明にしたい場合は、次のディザによるアルファ抜きが使われることも多いです。</p>
+    <p><br>
+    </p>
+    <h1>ディザによるアルファ抜き</h1>
+    <h2>ディザとは</h2>
+    <p>ディザ（Dither）というテクニックがあります。<br>
+      昔、コンピューターでたくさんの色が扱えなかったころに、少ない色数でグラデーションを表現するために使われた技法です。</p>
+    <p>例えば、下図の左のような元画像があったとして、白と黒の2色しか使えない環境で普通に表示しようとすると、右側のようになってしまいます。</p>
+    <p><img src="image/2020-12-13_19h57_51.png" alt="">引用：<a href="https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%A3%E3%82%B6"
+        target="_blank">https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%A3%E3%82%B6</a></p>
+    <p>細かいグラデーションは完全に失われてしまいました。</p>
+    <p>ディザを使って白黒2色に変換したものが下図になります。</p>
+    <p><img src="image/2020-12-13_19h59_01.png" alt=""></p>
+    <p>元画像には及びませんが、単純に白黒にしたものよりは、グラデーションが表現できています。<br>
+      このように、白と黒を良い感じに散布させることで中間の色を表現するテクニックをディザ（ディザリング）といいます。</p>
+    <h2>ディザによるアルファ抜きとは</h2>
+    <p>最近のモニターは1677万色を表現できるので、ディザはほとんど使われなくなりましたが、ディザを応用して半透明を実現する手法が最近のゲームではよく使われます。</p>
+    <p><img src="image/ditheralpha.gif" alt=""></p>
+    <p>拡大するとこうです↓</p>
+    <p><img src="image/ditheralphazoom.gif" alt=""></p>
+    <p>拡大すると粗が目立ちますが、高解像度でゲームをプレイしているとそれほど気になりません。<br>
+      オブジェクトの透明度に応じてアルファで抜くかどうかを決めるだけであり、通常の半透明描画と違ってブレンドはしないし、描画順も気にする必要がないのが利点です。</p>
+    <p>ちなみに、網戸のように見えることから、英語では「Screen Door Transparency」とも呼ばれるようです（Screen Door = 網戸）。</p>
+    <h2>ディザによるアルファ抜きシェーダー</h2>
+    <p>Unityにはあらかじめ、アルファ抜きのためディザマスク画像が組み込まれています。<br>
+      このような画像です。</p>
+    <p><img src="image/20180726014507.png" alt=""></p>
+    <p>小さすぎてよくわからないので、拡大します。</p>
+    <p><img src="image/ditherZoom.png" alt=""></p>
+    <p>これは、4×4ピクセルが1つのブロックとなっています。それが縦に16個並んでいます。</p>
+    <img src="image/2020-12-13_20h29_46.png" alt="" style="width: 36px; height: 556px;">
+    <p>アルファ値に応じてどの部分を参照するかを決定して、スクリーン上の4×4ピクセルの範囲でマスク画像の4×4ピクセルと1対1で対応させてカットアウトするかどうかを決めます。<br>
+      上記の画像はわかりやすくするために白黒になっていますが、実際はアルファ値に0または1の値が格納されているため、それを見てカットアウトするかを判断します。</p>
+    <br>
+    <p><br>
+    </p>
+    <p class="source">Shader "MyShader/DitherTransparent"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Alpha("Alpha", Range(0.0, 1.0)) = 1.0<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags {"Queue" = "AlphaTest" "RenderType" = "Opaque"}<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // シェーダモデル3.0以上じゃないとVPOSが使えない<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #include "UnityCG.cginc"<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 頂点シェーダー入力構造体<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct vertex_in<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 頂点シェーダの出力構造体<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct vertex_out<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // フラグメントシェーダの入力構造体。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 今回は頂点シェーダーの出力とフラグメントシェーダーの入力が異なる<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // （頂点シェーダーではクリップ空間座標を出力し、フラグメントシェーダーではスクリーン座標を受け取りたい）<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ため、頂点シェーダーの出力構造体とフラグメントシェーダーの入力構造体は別々に定義する。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct frag_in<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // UNITY_VPOS_TYPE型の変数をVPOSセマンティクスで定義する。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // VPOSセマンティクスを付けると、スクリーン座標が格納される。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UNITY_VPOS_TYPE vpos : VPOS;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _DitherMaskLOD2D;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _Alpha;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define BLOCK_SIZE 4<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #define BLOCK_NUM 16<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; vertex_out vert(vertex_in v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; vertex_out o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(frag_in i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // スクリーン座標<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 screenPos = i.vpos.xy;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ディザテクスチャのどこを参照するかのUVを求める。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 4ピクセル周期で繰り返したいの4で割る<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // →0, 1, 2, 3, 0, 1, 2, 3, ....となる。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // それのfracを求めると<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // →0, 0.25, 0.5, 0.75, 0, 0.25, .....となる<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv = frac(screenPos / BLOCK_SIZE);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // アルファ値の分だけUVのVを上方向にずらす。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // アルファ値が0のときは0、アルファ値が1のときは15/16だけずらしたい。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float voffset = (BLOCK_NUM - 1.0) / BLOCK_NUM * _Alpha;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // uv.yを16で割ることで、Vが1ブロック分（0～0.0624）になる。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // それを上で求めたvoffset分だけ上にずらす。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uv.y = uv.y / BLOCK_NUM + voffset;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ディザマスク画像の読み込み。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 抜くべき部分はアルファが0、描画すべき部分はアルファが1となっている。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float mask = tex2D(_DitherMaskLOD2D, uv).a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 0.5を引いてclipすることにより、マスクが0だった部分は切り抜かれ、マスクが1だった部分は描画される<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; clip(mask - 0.5);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // あとはテクスチャから普通に色を取ってきておしまい<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>これでディザによるアルファ抜きができました。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <h2>アルファ値変更時にチラチラさせたくない場合</h2>
+    <p>上記のシェーダーコードだと、アルファ値の変更時に、カットアウトした部分がチラチラと動きます。</p>
+    <p><img src="image/chirachira.gif" alt=""></p>
+    <p>カメラやキャラクターが動いていれば、ほとんど気にならないと思いますが、もしこれが気になる場合は、次のようにコードを修正します。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag(frag_in i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // スクリーン座標<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 screenPos = i.vpos.xy;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ディザテクスチャのどこを参照するかのUVを求める。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 4ピクセル周期で繰り返したいの4で割る<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // →0, 1, 2, 3, 0, 1, 2, 3, ....となる。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // それのfracを求めると<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // →0, 0.25, 0.5, 0.75, 0, 0.25, .....となる<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv = frac(screenPos / BLOCK_SIZE);<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 傾きを16倍にする。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // そのままだとアルファ値が1のときにUVのVが1になってしまい、1周して透明になってしまうのを防ぐため、0.999をかけている<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // （テクスチャのWrapModeをClampにできれば良いのだが…）<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float voffset = _Alpha * BLOCK_NUM * 0.999;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // aからfrac(a)を引くことで、16段の階段状になる。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 16で割って、範囲を0～0.9375に収める。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; voffset = (voffset - frac(voffset)) / BLOCK_NUM;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uv.y = uv.y / BLOCK_NUM + voffset;</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ディザマスク画像の読み込み。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 抜くべき部分はアルファが0、描画すべき部分はアルファが1となっている。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float mask = tex2D(_DitherMaskLOD2D, uv).a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 0.5を引いてclipすることにより、マスクが0だった部分は切り抜かれ、マスクが1だった部分は描画される<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; clip(mask - 0.5);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // あとはテクスチャから普通に色を取ってきておしまい<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p><br>
+    </p>
+    <p>これでカットアウト部分がチラチラと動かなくなりました。</p>
+    <p><img src="image/ditheralphazoom.gif" alt=""></p>
+    <br>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><a href="../">目次へ戻る</a></p>
+    <p><br>
+    </p>
+  </body>
+</html>
