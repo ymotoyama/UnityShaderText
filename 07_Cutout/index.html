@@ -330,7 +330,7 @@
       <br>
       フラグメントシェーダーでは、上記のように、frac()を使ったり、かけたり、足したり、引いたり…様々な計算を行って値をいじくります。<br>
       慣れてくると、結果が頭の中で想像できるようになるのですが、慣れないうちは大変です。そのようなときは、グラフによる可視化が役に立ちます。<br>
-      上記でグラフの画像が掲載されていますが、そのグラフは<a href="mailto:https://www.iquilezles.org/apps/graphtoy/"
+      上記でグラフの画像が掲載されていますが、そのグラフは<a href="https://www.iquilezles.org/apps/graphtoy/"
         target="_blank">Graphtoy</a>というWebサイトで作ったものです。<br>
       シェーダーに慣れないうちは（慣れても複雑な計算を行うときは）使ってみてください。</p>
     <a href="mailto:https://www.iquilezles.org/apps/graphtoy/" target="_blank"> </a>
@@ -534,7 +534,7 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = tex2D(_MainTex, i.uv);<br>
       <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // しきい値付近を光らせる<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; _DissolveAmount + _BrightWidth)<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color += float4(_BrightColor.xyz, 0);</em><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color += float4(_BrightColor.rgb, 0);</em><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
@@ -566,7 +566,7 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = tex2D(_MainTex, i.uv);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // しきい値付近を光らせる<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; <em>threshold</em> + _BrightWidth)<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color += float4(_BrightColor.xyz, 0);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color += float4(_BrightColor.rgb, 0);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
     <p>これで、<code>DissolveAmount</code>が0のときは、燃えるような表現が出ないようになりました。</p>
@@ -670,6 +670,31 @@
         target="_blank">Materialのマニュアル</a>を参照してください。</p>
     <p><br>
     </p>
+    <p class="column"><b>速度を気にする場合は、文字列でなくIDで指定しよう</b><br>
+      <br>
+      上記のプログラムでSetFloatする際、変数名を文字列で指定していますが、文字列ではなくIDで指定するほうがパフォーマンス的には好ましいです。次のようになります。<br>
+      <br>
+      public class DissolveTest : MonoBehaviour<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; public float m_Duration = 2f; // 消えるまでに要する時間（秒）<br>
+      &nbsp;&nbsp;&nbsp; float m_DissoveAmount = 0;<br>
+      &nbsp;&nbsp;&nbsp; Material m_Material;<br>
+      <br>
+      <em>&nbsp;&nbsp;&nbsp; static readonly int DissolveAmountID = Shader.PropertyToID("_DissolveAmount");<br>
+      </em><br>
+      ... 中略 ...<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; IEnumerator Dissolve()<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(m_DissoveAmount &lt; 1f)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_DissoveAmount += 1f / m_Duration * Time.deltaTime;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_Material.SetFloat(<em>DissolveAmountID</em>, m_DissoveAmount);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; yield return null;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }<br>
+    </p>
     <h1>練習問題</h1>
     <p>テレポートシェーダーを作ってください。</p>
     <img src="image/teleport.gif" alt=""><br>
@@ -692,7 +717,7 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = tex2D(_MainTex, i.uv);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // しきい値付近を光らせる<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (d &lt; threshold + _BrightWidth)<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color += float4(_BrightColor.xyz, 0);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color += float4(_BrightColor.rgb, 0);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
     <p>これはif文をまったく使わずに書くことができます。次のようになります。</p>
@@ -708,7 +733,7 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 color = tex2D(_MainTex, i.uv);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // しきい値付近を光らせる<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>int flag = step(d, threshold + _BrightWidth);</em><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>color += lerp(float4(0, 0, 0, 0), float4(_BrightColor.xyz, 0), flag);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>color += lerp(float4(0, 0, 0, 0), float4(_BrightColor.rgb, 0), flag);</em><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return color;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
     <p><br>
