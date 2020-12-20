@@ -293,7 +293,7 @@
     <p><br>
     </p>
     <h2>減色</h2>
-    <p>先のシェーダーだと、明るい場所の暗い場所の2色しか表現できません。もう少し陰の段階を作りたい場合は、次のようにします。</p>
+    <p>先のシェーダーだと、明るい場所と暗い場所の2色しか表現できません。もう少し多くの陰の段階を作りたい場合は、次のようにします。</p>
     <h3>減色する</h3>
     <p>少ない色数でグラデーションを表現するシェーダーを作りましょう。<br>
       黄色くした部分以外は、<code>2-1(1)</code>のハーフランバートシェーダーと同じです。</p>
@@ -358,9 +358,9 @@
     </p>
     <p>追加したコードについて説明します。<br>
       0～1の範囲を取る元の<code>diffuse</code>を、下記のグラフでは①とします。<code>_Step</code>の値を仮に3とします。</p>
-    <p class="source">diffuse *= _Step; <span style="color: #0a7f5c;">// ② 傾きを3倍にする</span><br>
-      diffuse -= frac(diffuse); <span style="color: #0a7f5c;">// ③ 小数点以下を引くことで階段状にする</span><br>
-      diffuse /= (_Step - 1); <span style="color: #0a7f5c;">// ④ 2で割ることにより、傾きを元に戻す</span></p>
+    <p class="source">diffuse *= _Step; <span style="color: #219a43;">// ② 傾きを3倍にする</span><br>
+      diffuse -= frac(diffuse);<span style="color: #219a43;"> // ③ 小数点以下を引くことで階段状にする</span><br>
+      diffuse /= (_Step - 1); <span style="color: #0a7f5c;"><span style="color: #219a43;">// ④ 2で割ることにより、傾きを元に戻す</span></span></p>
     <img src="image/2020-12-17_12h05_41.png"><br>
     <p>④のときに、なぜ<code>_Step</code>ではなく<code>(_Step - 1)</code>で割っているかというと、<code>_Step</code>で割ってしまうと、最も明るい場所でも<code>diffuse</code>の値が1にならないからです（下図A）。<code>(_Step - 1)</code>で割ると、最も明るい場所の<code>diffuse</code>が1になるようになります（下図B）。</p>
     <img src="image/2020-12-17_12h10_47.png" alt="">&nbsp; <img src="image/2020-12-17_12h11_47.png"
@@ -445,7 +445,7 @@
       {<br>
       &nbsp;&nbsp;&nbsp; Properties<br>
       &nbsp;&nbsp;&nbsp; {<br>
-      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Tone("Tone Map", 2D) = "white" {}</em><br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _Tone("Tone Map", 2D) = "white" {}</em><br>
       &nbsp;&nbsp;&nbsp; }<br>
       <br>
       &nbsp;&nbsp;&nbsp; SubShader<br>
@@ -502,34 +502,307 @@
     <p><img src="image/tone01.png" alt=""></p>
     <p><img src="image/tone02.png" alt=""></p>
     <p><img src="image/tone03-1.png" alt=""></p>
-    <p>画像をUnityにインポートし、マテリアルから設定してください。</p>
-    <p>ハーフランバートで求めた<code>diffuse</code>の値をUVのU（横軸）として使うことで、光が強く当たった場所ほど、マップ画像の右側の色が、光が当たっていない場所ほどマップ画像の左側の色が取得されます。</p>
+    <p>画像をUnityにインポートします。<br>
+      インポートした画像の<code>Wrap Mode</code>は<code>Clamp</code>にしておいてください。</p>
+    <img src="image/2020-12-20_11h32_07.png" alt="">
+    <p><br>
+    </p>
+    <p>マテリアルの<code>Tone Map</code>欄に画像を設定してください。</p>
+    <p><br>
+    </p>
+    <p>ハーフランバートで求めた拡散反射光<code>diffuse</code>の値をUVのU（横軸）として使うことで、光が強く当たった場所ほど、マップ画像の右側の色が、光が当たっていない場所ほどマップ画像の左側の色が取得されます。</p>
     <img src="image/tonemapping.gif" alt="">
     <p><br>
     </p>
     <h1>アウトライン</h1>
+    <p>少ない色数で陰影のグラデーションを表現することと合わせて、トゥーンレンダリングに欠かせないのが「<strong>アウトライン（輪郭線）の描画</strong>」です。</p>
+    <p>アウトラインを描画する手法はいくつか存在します。</p>
     <h2>押し出しによるアウトライン</h2>
+    <p>おそらく最もよく使われるのが、「<strong>法線方向に押し出したポリゴンの裏面を描画する</strong>」という手法です。</p>
+    <p class="source">Shader "MyShader/ExtrutionOutline"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex ("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _OutlineWidth ("Outline Width", Range(0, 0.5)) = 0.03<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _OutlineColor ("Outline Color", Color) = (0, 0, 0, 1)<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// 1パス目。普通にモデルを描画。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 pos : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 pos : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert(appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.pos = UnityObjectToClipPos(v.pos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 frag(v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 col = tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return col;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// 2パス目。アウトラインを描画。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// 表向きのポリゴンをカリング（裏向きのポリゴンのみ描画する）</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cull Front<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #include "UnityCG.cginc"<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _OutlineWidth;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 _OutlineColor;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert(float4 pos : POSITION, float3 normal : NORMAL) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// 頂点座標を法線方向に移動（モデルを膨らませる）</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pos += float4(normal * _OutlineWidth, 0);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// オブジェクト空間からクリップ空間に変換して終了</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(pos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag() : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// 指定された色を返却するだけ。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return _OutlineColor;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p>今回のシェーダーでは<code>Pass</code>ブロックが2回出てきます。1つの<code>Pass</code>が1つの描画処理を表しているので、<code>Pass</code>が2つということは、描画処理が2回行われるということです。<br>
+      このようなシェーダーを「2パスシェーダー」や「マルチパスシェーダー」と呼びます。<br>
+      今回は、本体部分の描画とアウトラインの描画にそれぞれ1パスずつ使うため、2パスとなっています。</p>
+    <p>最初のパスでは、普通に3Dモデルを描画します。</p>
+    <p>2番目のパスがアウトライン描画のパスです。</p>
+    <p>1つ目のポイントはこちら：</p>
+    <p class="source"><span style="color: #219a43;">// 表向きのポリゴンをカリング（裏向きのポリゴンのみ描画する）</span><br>
+      Cull Front</p>
+    <p><code>Cull</code>構文でカリングの設定を行えます。<code>Cull</code>構文には以下の3つの指定があります。<a
+        href="https://docs.unity3d.com/ja/2018.4/Manual/SL-CullAndDepth.html"
+        target="_blank">公式マニュアル</a></p>
+    <table style="width: 100%" border="1">
+      <tbody>
+        <tr>
+          <td>指定</td>
+          <td>意味</td>
+        </tr>
+        <tr>
+          <td>Cull Back</td>
+          <td>通称「<strong>背面カリング</strong>」。裏向きのポリゴンを描画しない。裏向きのポリゴンは通常、3Dモデルの内側であるため、描画する必要が無い。<strong>Cull構文を指定しない場合はデフォルトでこれになっている</strong>。</td>
+        </tr>
+        <tr>
+          <td>Cull Front</td>
+          <td>表向きのポリゴンを描画しない。つまり裏向きのポリゴンのみ描画する。普通はあまり使わないが、今回のような特殊な描画手法のときに使うときがある。</td>
+        </tr>
+        <tr>
+          <td>Cull Off</td>
+          <td>カリングしない。表向きのポリゴンも裏向きのポリゴンもすべて描画する。</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><br>
+      今回は<code>Cull Front</code>の指定を行い、裏向きのポリゴンのみ描画するようにしています。</p>
+    <p><br>
+    </p>
+    <p>2つ目のポイントはサーフェイスシェーダー内のこちらのコード：</p>
+    <p class="source">// 頂点座標を法線方向に移動（モデルを膨らませる）<br>
+      pos += float4(normal * _OutlineWidth, 0);</p>
+    <p>頂点座標に法線ベクトルを足しています。<br>
+      これにより、3Dモデルが法線方向に膨らみます。<br>
+      アウトラインを描画するために、本来の3Dモデルより少し大きく膨らませた3Dモデルとしているのです。<br>
+      膨らませた3Dモデルでアウトラインを描画する関係上、前段の<code>Cull Front</code>の指定が重要になってきます。</p>
+    <p><img src="image/cullback.gif" alt=""> &nbsp; <img src="image/cullfront.gif"
+        alt=""></p>
+    <p>　　　　　　　　　　Cull Back　　　　　　　　　　　　　　　　　　　　　　Cull Front</p>
+    <br>
+    <p class="column"><b>輪郭線がちぎれる件について</b><br>
+      <br>
+      上記の手法でアウトラインを描画すると、3Dモデルによっては、アウトラインがちぎれてしまいます。最も身近なオブジェクトでいうと、デフォルトのCubeに適用すると発生します。<br>
+      <img src="image/2020-12-20_18h06_49.png" alt="" style="width: 388px; height: 265px;"><br>
+      これは、法線の設定が「ソフトエッジ」か「ハードエッジ」かの違いで発生します。<br>
+      <br>
+      <img src="image/housenzu.png" alt="" style="width: 646px; height: 644px;"><br>
+      引用：<a href="https://flmt.jp/press/2754/" target="_blank">https://flmt.jp/press/2754/</a><br>
+      <br>
+      ソフトエッジの場合はアウトラインがちぎれませんが、ハードエッジの場合はアウトラインがちぎれてしまいます。<br>
+      では、すべてソフトエッジで作れば良いのかというと、もちろんそうではないわけで、この問題はなかなか難しい問題です。<br>
+      <a href="https://cgworld.jp/feature/201806-unite-04toonshader01-3.html"
+        target="_blank">アニメ調グラフィックのゲームの最高峰「ギルティギア」シリーズでは、メッシュデータをインポートする際に特殊なプログラムを走らせてこの問題に対処している</a>らしいです。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
     <h2>リムライトによるアウトライン</h2>
+    <p>上で紹介した手法は「オブジェクトの<strong>外側</strong>にアウトライン描画する」ものでしたが、以前学んだリムライトと似た手法で「オブジェクトの<strong>内側</strong>にアウトラインを描画する」やり方もあります。</p>
+    <p class="source">Shader "MyShader/RimOutline"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex ("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _OutlineWidth("Outline Width", Range(0, 1)) = 0.03<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _OutlineColor("Outline Color", Color) = (0, 0, 0, 1)<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #include "UnityCG.cginc"<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 pos : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normal : NORMAL;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 pos : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 worldNormal : TEXCOORD1;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 worldPos : TEXCOORD2;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _OutlineWidth;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 _OutlineColor;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert (appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.pos = UnityObjectToClipPos(v.pos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// 法線ベクトルをワールド空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.worldNormal = UnityObjectToWorldNormal(v.normal);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// 頂点座標をワールド空間に変換</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.worldPos = mul(UNITY_MATRIX_M, v.pos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag (v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// テクスチャーから地の色を取得</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 baseColor = tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// 視線ベクトル（面からカメラ方向のベクトル）を計算</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// 正面度合いを計算（カメラに向いている面は1、視線ベクトルと水平な面は0）</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float frontFace = dot(i.worldNormal, viewDir);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// アウトラインとすべきか判定。正面度合いがしきい値より小さい（縁である）場合は1、そうでなければ0となる</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float outline = step(frontFace, _OutlineWidth);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #219a43;">// 地の色にするかアウトラインの色にするか決める。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return lerp(baseColor, _OutlineColor, outline);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><br>
+    </p>
+    <p><img src="image/rimoutline.gif" alt=""></p>
+    <p>押し出しによるアウトラインは2パスですが、こちらの手法は1パスなので、こちらのほうが軽量という点では優れています。</p>
+    <p>欠点としては、</p>
+    <ul>
+      <li>太いアウトラインを描画しようとするとモデルに食い込んでしまうこと</li>
+      <li><strong>平面が多いモデルでは、うまく描画できない</strong></li>
+    </ul>
+    <p>などが挙げられます。<br>
+      2点目の欠点については、上図のぱっちぃのような曲面のみで構成された3Dモデルでは気になりませんが、平面の多いモデルでは致命的な問題になります。<br>
+      Cubeなどで確認してみましょう。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p>この手法は、単に「アウトライン（輪郭線）」としての使い方よりも、発光などを伴う「強調表示」として使われることが多いように思います。<br>
+      例えば、「DOOM Eternal」というゲームでは、次のように、ターゲットやアイテムを強調表示するために使われていました。</p>
+    <p> <img src="image/doom.gif" alt=""></p>
+    <p>フラグメントシェーダーを少し書き換えれば、このようになります：</p>
+    <p class="source">Shader "MyShader/RimOutline"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MainTex ("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _OutlineWidth("Outline Width", Range(0, 1)) = 0.03<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>[HDR]</em> _OutlineColor("Outline Color", Color) = (1, 1, 0.5, 1)<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      <span style="color: #219a43;">... 中略 ...</span><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag (v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // テクスチャーから地の色を取得<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 baseColor = tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 視線ベクトル（面からカメラ方向のベクトル）を計算<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 正面度合いを計算（カメラに向いている面は1、視線ベクトルと水平な面は0）<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float frontFace = dot(i.worldNormal, viewDir);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // アウトラインとすべきか判定。正面度合いがしきい値より小さい（縁である）場合は1、そうでなければ0となる<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float outline = step(frontFace, _OutlineWidth);<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // アウトラインの発光具合を計算（アウトラインの場所じゃなければ(0,0,0,0)）<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 outlineColor = lerp(0, _OutlineColor, outline);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 時間で発酵度合いに強弱をつける<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; outlineColor *= (sin(_Time.y * 8) / 2 + 0.5);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 地の色にアウトラインの発光を加算<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return baseColor + outlineColor;</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p>ポストエフェクトのBloomと組み合わせれば、この通り。</p>
+    <img src="image/outlineglow.gif" alt="">
+    <p><br>
+    </p>
     <h2>その他の技法</h2>
     <p>今回は紹介しませんが、上記以外にも、アウトライン描画を実現するために、押し出しとステンシルバッファを併用したり、ポストエフェクトを使用したりといった技法が存在します。</p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
-    <p><br>
-    </p>
+    <h1>練習問題</h1>
+    <p>2章の陰影のグラデーションを減色したものと3章のアウトライン表現を組み合わせて、トゥーンシェーダーを作成してください。</p>
+    <br>
     <p><br>
     </p>
     <p><br>
