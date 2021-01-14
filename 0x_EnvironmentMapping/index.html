@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE">
+    <title>環境マッピング</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+       
+    </style>
+  </head>
+  <body>
+    <p class="title">環境マッピング</p>
+    <p></p>
+    <br>
+    <h1>環境マッピング</h1>
+    <h2>環境マッピングとは</h2>
+    <p>「<strong>環境マッピング</strong>」とは周囲の景色を反射しているように見せる技術です。</p>
+    <p>例えば、パチンコ玉のような磨き上げられた金属の表面を表現したいとします。</p>
+    <p><img src="image/%E3%80%80pachinko.jpg" alt=""></p>
+    <p>↑※これは実写</p>
+    このような表現は、スペキュラー（鏡面反射）を強くするだけでは実現できません。
+    <p><img src="image/NonAmbient.png" alt=""></p>
+    <p>↑いくらスペキュラーを強くしても、パチンコ玉のようには見えません…。</p>
+    <p><strong>パチンコ玉をよく見てみると、周囲の景色を鏡のように映し出しています。これが、パチンコ玉らしさを生んでいます</strong>。</p>
+    <p>このように周囲の景色を物体表面に映し出すためには、光源から放たれた光がどのように反射して最終的にカメラに到達したのかを計算しなければなりません（通称：レイトレーシング）。これは、負荷の高い計算であり、リアルタイムレンダリングではとても実現できません。そこで、考案された方法が<strong>環境マッピング</strong>です。周囲の景色をあらかじめ<strong>キューブマップ</strong>という形式の画像にしておき、それを物体表面に映し出す手法です。</p>
+    <h2>キューブマップとは</h2>
+    <p>キューブマップとは、ある観測地点から、前・後・左・右・上・下の全6方向を撮影した画像のことです。</p>
+    <p><img src="image/2021-01-14_23h41_18.png" alt=""></p>
+    <img src="image/2021-01-14_23h42_12.png" alt="" style="width: 716px; height: 536px;"> 引用：<a
+      href="https://en.wikipedia.org/wiki/Cube_mapping#/media/File:Panorama_cube_map.png">https://en.wikipedia.org/wiki/Cube_mapping#/media/File:Panorama_cube_map.png</a><br>
+    <p>キューブマップには、上図のように、サイコロの展開図のような形式や、下図のように横一列に並べたものなど、様々な形式があります。</p>
+    <img src="image/cubemap_sample.png" alt="" style="width: 882px; height: 147px;">
+    <p><br>
+    </p>
+    <p>キューブマップは、スカイボックスや環境マッピングなどに使われます。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+        <br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><a href="../">目次へ戻る</a></p>
+    <p><br>
+    </p>
+  </body>
+</html>
