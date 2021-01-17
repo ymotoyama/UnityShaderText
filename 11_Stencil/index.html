@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE">
+    <title>ステンシルバッファ</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+       
+    </style>
+  </head>
+  <body>
+    <p class="title">ステンシルバッファ</p>
+    <p></p>
+    <br>
+    <h1>ステンシルとは</h1>
+    <p>一般的に、「Stencil」とは「型紙」や「型抜き」のことです。以下のようなものを指します。</p>
+    <p><img src="image/spray-stencil-top.jpg" alt="" style="width: 434px; height: 326px;"> </p>
+    <p><img src="image/remove-stencil-1.jpg" alt="" style="width: 435px; height: 326px;"></p>
+    <p><br>
+    </p>
+    <p>シェーダーにはステンシルという機能があり、これを使うとオブジェクトの一部だけを切り抜いて描画したりすることが可能になります。</p>
+    使用方法は、少しややこしいです。理由としては、次の点が挙げられます。<br>
+    <ul>
+      <li>ステンシルバッファという目に見えない領域を操作する</li>
+      <li>現実のステンシルと同様に、最低でも「型の作成」と「型に応じて描画」の2ステップが必要になる</li>
+    </ul>
+    <p> 「ステンシルバッファ」とは、画面のピクセル数と同じ数の情報を持つことができるバッファです。そこに格納できるのは色ではなく、0～255の整数です。ここに値を書き込むことによって型を作り、その値を参照して塗るか塗らないかを決めることによって、型抜きのような効果が実現できます。</p>
+    <p>これをうまく使うと、様々な特殊な表現が可能になります。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <h1>ステンシルの例 その1</h1>
+    <p>とりあえずステンシルを使った最短のシェーダーを作り、動作を見ていきましょう。</p>
+    <p>あるオブジェクトAに重なったときだけ、オブジェクトBを描画するシェーダーです。</p>
+    <p> <img src="image/stemcil.gif"> </p>
+    <p>↑Cubeに重なったときだけ、Sphereが描画されている。</p>
+    <h2>「型」となるシェーダーの作成</h2>
+    <p>まず、新規シェーダーを作成します。名前は「StencilA」とします。</p>
+    <p class="source">Shader "MyShader/StencilA"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { <em>"Queue"="Geometry"</em> "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stencil {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ref 1<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Comp always<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass replace<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert (float4 pos : POSITION) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(pos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 frag () : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(1, 0, 0, 1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p>新規マテリアルを作ります。名前は「StencilAMat」とでもします。そのマテリアルにStencilAシェーダーを設定します。</p>
+    <p><br>
+    </p>
+    <h2>型に抜かれて描画されるシェーダーの作成</h2>
+    <p>新規シェーダーを作成します。名前は「StencilB」とします。</p>
+    <p class="source">Shader "MyShader/StencilB"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { <em>"Queue" = "Geometry+1"</em> "RenderType" = "Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stencil {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ref 1<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Comp equal<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert(float4 pos : POSITION) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(pos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 frag() : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(0, 0, 1, 1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p>新規マテリアルを作ります。名前は「StencilBMat」とでもします。そのマテリアルにStencilBシェーダーを設定します。</p>
+    <p>適当にオブジェクトにアタッチして試してみます。</p>
+    <p>例えば、下図の例では、CubeにStencilAを適用し、SphereにStencilBを適用しています。</p>
+    <p><img src="image/stemcil.gif"></p>
+    <p><br>
+    </p>
+    <h1>解説</h1>
+    <h2>ステンシルテスト</h2>
+    <p>シェーダーにステンシルを記述した場合、「ステンシルテスト」と呼ばれる処理が行われます。ステンシルテストは、フラグメントシェーダーの後に、ピクセル単位で実行されます。テストに合格すると、通常通りピクセルに色（フラグメントシェーダーの出力結果）が塗られますが、不合格となった場合は、フラグメントシェーダーの出力結果は使われません（描画が行われない）。</p>
+    <h2>基本の構文</h2>
+    <p>前章のシェーダーの<code>Stencil</code>から始まるブロックがステンシルの命令です。<br>
+      Stencilの構文は次のようになっています。</p>
+    <p class="source">Stencil {<br>
+      &nbsp;&nbsp;&nbsp; Ref 基準値<br>
+      &nbsp;&nbsp;&nbsp; Comp 比較関数<br>
+      &nbsp;&nbsp;&nbsp; Pass 合格時の更新処理<br>
+      &nbsp;&nbsp;&nbsp; Fail 不合格時の更新処理<br>
+      &nbsp;&nbsp;&nbsp; ZFail ZFail時の更新処理<br>
+      }</p>
+    <p>ステンシルは、この1つの構文で、「型の作成」と「型で抜くように描画」の2つの機能を兼ねているので、注意してください。よく初学者がつまづくポイントです。<br>
+      <br>
+      Ref, Compなど、複数の命令から成りますが、<strong>すべての命令は省略可能</strong>です。また、上記以外にも命令がありますが、割愛します。詳細はUnityのマニュアルを参考にしてください：<a
+        href="https://docs.unity3d.com/ja/2018.4/Manual/SL-Stencil.html"
+        target="_blank">https://docs.unity3d.com/ja/2018.4/Manual/SL-Stencil.html</a></p>
+    <h2>Ref命令と基準値</h2>
+    <p>Ref命令は基準値を設定します。基準値は0～255の整数が指定可能です。<br>
+      <br>
+      基準値は、次の2つの用途で使われます：</p>
+    <ul>
+      <li>ステンシルテストの比較に使う</li>
+      <li>テスト合格（または不合格）時にステンシルバッファを更新するときに使う</li>
+    </ul>
+    <p>まったく違う2つの用途に使われるので注意してください。よく初学者がつまづくポイントです。</p>
+    <p><br>
+    </p>
+    <h2>Comp命令と比較関数</h2>
+    <p>Comp命令は比較関数を設定します。比較関数でバッファと基準値を比較した結果、ステンシルテストの合格/不合格が決まります。比較関数は、以下の種類があります：</p>
+    <table border="1">
+      <tbody>
+        <tr>
+          <td style="width:150px"><b>名称</b></td>
+          <td><b>説明</b></td>
+        </tr>
+        <tr>
+          <td>Greater<br>
+          </td>
+          <td>基準値がバッファ値<b>より大きい</b>場合にテスト合格となる。<br>
+          </td>
+        </tr>
+        <tr>
+          <td>GEqual<br>
+          </td>
+          <td>基準値がバッファ値<b>以上</b>の場合にテスト合格となる。 </td>
+        </tr>
+        <tr>
+          <td>Less<br>
+          </td>
+          <td>基準値がバッファ値<b>より小さい</b>場合にテスト合格となる。 </td>
+        </tr>
+        <tr>
+          <td>LEqual<br>
+          </td>
+          <td>基準値がバッファ値<b>以下</b>の場合にテスト合格となる。 </td>
+        </tr>
+        <tr>
+          <td>Equal<br>
+          </td>
+          <td>基準値がバッファ値と<b>等しい</b>場合にテスト合格となる。 </td>
+        </tr>
+        <tr>
+          <td>NotEqual</td>
+          <td>基準値がバッファ値と<b>異なる</b>場合にテスト合格となる。</td>
+        </tr>
+        <tr>
+          <td>Always</td>
+          <td>常にテスト合格となる。</td>
+        </tr>
+        <tr>
+          <td>Never</td>
+          <td>常にテスト不合格となる。</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><br>
+    </p>
+    <h2>Pass命令/Fail命令/ZFail命令と更新処理</h2>
+    <p>Pass命令は合格時にバッファをどのように更新するかを指定します。<br>
+      Fail命令は、不合格時にバッファをどのように更新するかを指定します。<br>
+      ZFail命令は、ステンシルテストは合格だが、Zテスト（深度テスト）で不合格となった場合（描画しようとした位置よりも手前のオブジェクトが既に描画されているため、描画しないと判断された場合）にバッファをどうするかの指定です。</p>
+    <p>バッファの更新処理は、以下の8種類があります：</p>
+    <table border="1">
+      <tbody>
+        <tr>
+          <td style="width:150px"><b>名称</b></td>
+          <td><b>説明</b></td>
+        </tr>
+        <tr>
+          <td>Keep</td>
+          <td>バッファ値を変更しない。デフォルト値はこれ。</td>
+        </tr>
+        <tr>
+          <td>Zero</td>
+          <td>バッファ値を0にする。</td>
+        </tr>
+        <tr>
+          <td>Replace</td>
+          <td>バッファ値を基準値に書き換える。</td>
+        </tr>
+        <tr>
+          <td>IncrSat</td>
+          <td>バッファ値に1加算（255の場合はそのまま）</td>
+        </tr>
+        <tr>
+          <td>DecrSat</td>
+          <td>バッファ値を1減算（0の場合はそのまま）</td>
+        </tr>
+        <tr>
+          <td>IncrWrap</td>
+          <td>バッファ値に1加算（255の場合は0になる）</td>
+        </tr>
+        <tr>
+          <td>DecrWrap</td>
+          <td>バッファ値を1減算（0の場合は255になる）</td>
+        </tr>
+        <tr>
+          <td>Invert</td>
+          <td>全ビットを反転させる。</td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    <p><br>
+    </p>
+    <h2>Queueの指定について</h2>
+    <p>これはステンシルの機能とは別の機能ですが、前章のサンプルではQueueを指定しています。</p>
+    <p>Queueは描画処理を行う順番に関係します。<code>Geometry</code>というのは定数で、内部的には2000です。<code>Geometry</code>の他にも、<code>Background</code>(1000)、<code>AlphaTest</code>(2450)、<code>Transparent</code>(3000)、<code>Overlay</code>(4000)などがあります。Queueを指定しなかった場合のデフォルト値は<code>Geometry</code>です。</p>
+    <p><code>Geometry+1</code>と記述すると、2001という意味になります。他の<code>Geometry</code>が設定された全てのオブジェクトの描画が終わってから、<code>Geometry+1</code>のオブジェクトの描画が行われます。</p>
+    <p>前章のサンプルでは、StencilBシェーダー（Sphere）が描画されるときには、既にStencilAシェーダー（Cube）の描画が終わっている（ステンシルバッファが完成している、つまり型が完成している）必要があるので、StencilBシェーダーの描画が後で行われるようにQueueを<code>Geometry+1</code>としています。</p>
+    <p>このように、<strong>ステンシルバッファを使う際は、描画順に気を使う必要があります</strong>。</p>
+    <h1>ステンシルの例 その2</h1>
+    <p>もう少し実用的なサンプルを作成してみましょう。</p>
+    <img src="image/Silhouette.gif" alt="">
+    <p>これは、壁に遮られたときにシルエットを描画するシェーダーです。ポイントを黄色く強調表示します。</p>
+    <p class="source">Shader "MyShader/Silhouette"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex ("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 1パス目。通常の描画を行う。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ステンシルバッファに1を書き込む。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // "Geometry+1"を指定することで、通常のオブジェクトよりも後に描画する<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { <em>"Queue" = "Geometry+1"</em> "RenderType" = "Opaque" }<br>
+      <br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stencil {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ref 1 // 基準値は1<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Comp Always // 常にステンシルテストに合格<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass Replace // ステンシルバッファに基準値を書き込む<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #include "UnityCG.cginc"<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 pos : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 pos : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert (appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.pos = UnityObjectToClipPos(v.pos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 frag (v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 col = tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return col;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 2パス目。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ステンシルバッファが1以外の場所に書き込む。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // （1パス目が描画されているところはステンシルバッファが1になっている。<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp; 1パス目が描画されていないところ（=壁に遮られていたところ）はステンシルバッファが0なので、<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp; そこに描画する）<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // "Geometry+2"を指定することで、上のPassよりさらに後に描画する<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { <em>"Queue" = "Geometry+2"</em> "RenderType" = "Opaque" }<br>
+      <br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZTest Always // デプステストには常に合格する（手前に壁があろうと描画する）<br>
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stencil {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ref 1 // 基準値は1<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Comp NotEqual // ステンシルバッファが1ではないとき、テストに合格<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert(float4 pos : POSITION) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(pos);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 frag() : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return fixed4(1, 0, 0, 1);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p>このシェーダーをキャラクターに設定して、壁で隠してみましょう（壁のシェーダーは何でも良いです）。</p>
+    <p><br>
+    </p>
+    <p>ポイントを解説します。</p>
+    <p>このシェーダーは2パスシェーダーです。1パス目で通常の描画を行い、2パス目でシルエットの描画を行っています。</p>
+    <p>1パス目で<code>"Queue" = "Geometry+1"</code>を指定することにより、描画をその他のオブジェクトより後にしています。これは、壁の描画が終わってから、その後にキャラクターの描画を行いたかったからです。</p>
+    <p>Stencil構文により、ステンシルバッファに1を書き込んでいます。壁に遮られている場合は、デプステスト（Zテスト）で不合格となり、ステンシルバッファへの書き込みも行われません。つまり、ステンシルバッファは初期値の0のままになります。これがミソで、キャラクターが描画された場所はステンシルバッファが1になり、何かに遮られて描画されなかった場所は0になるというわけです。</p>
+    <img src="image/2021-01-17_17h39_33.png" alt="">
+    <p>2パス目では<code>"Queue" = "Geometry+2"</code>を指定することにより、1パス目よりさらに後に描画を行っています。</p>
+    <p><code>ZTest Always</code>を指定して、デプステストには常に合格するようにしています。これを指定しないと、壁に遮られている場合はデプステスト不合格となり、描画が行えません。</p>
+    <p>Stencil構文により、ステンシルバッファが1ではないときのみ合格するようにしています。これで、壁に遮られた場所にのみシルエットの描画が行われます。</p>
+    <p><br>
+    </p>
+    <p>このようなシルエット処理は、市販ゲームでもよく使われますね。</p>
+    <p><img src="image/Fallguys.gif" alt=""></p>
+    <p>引用：Fall Gus</p>
+    <br>
+    <h1>ステンシルバッファの可能性</h1>
+    <p>ステンシルバッファは、基本的には型を作成して型抜きをする機能ですが、現実の型抜きとは違い、型の部分だけ描画したり、逆に描画しなかったりと、発想次第でものすごく多用な表現が可能です。</p>
+    <p>ぜひ色々と調べてみましょう。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><a href="../">目次へ戻る</a></p>
+    <p><br>
+    </p>
+  </body>
+</html>
