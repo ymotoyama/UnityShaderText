@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE">
+    <title>サーフェイスシェーダー</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+       
+    </style>
+  </head>
+  <body>
+    <p class="title">サーフェイスシェーダー</p>
+    <p></p>
+    <h1>サーフェイスシェーダーとは</h1>
+    <h2>サーフェイスシェーダーとは</h2>
+    <p>サーフェイスシェーダーとは、Unityの独自機能の名称です。</p>
+    <p><strong>サーフェイスシェーダーを使うと、手軽に高品質なシェーダーを作成することができます</strong>。</p>
+    <p>Unityには、Standardシェーダーという高品質な物理ベースシェーダーが用意されています。それで自分のやりたい表現が実現可能なのであれば良いのですが、自分でシェーダーを書かないと実現できないことも多いでしょう。そのとき、イチからシェーダーを書いてStandardシェーダーと同等の品質のシェーダーを記述するのは困難です。具体的には、以下のような機能を実装する必要があります：</p>
+    <ul>
+      <li>物理ベースシェーディング</li>
+      <li>影を落とす処理</li>
+      <li>影を受ける処理</li>
+      <li>フォグ</li>
+      <li>ライトマップ</li>
+      <li>リフレクションプローブ</li>
+      <li>ライトプローブ</li>
+    </ul>
+    <p>「ちょっとディゾルブさせたいだけなんだけど…」という場合に、上記を実装するのは、あまりに非効率的です。</p>
+    <p>そこで、それを効率的に解決するために用意されているUnityの仕組みがサーフェイスシェーダーです。<br>
+      サーフェイスシェーダーを使うと、短いコードで、上に列挙した機能を含む独自のシェーダーを作成できます。</p>
+    <p>例えば、次のシェーダーコードは、サーフェイスシェーダーを新規作成したときのテンプレートなのですが、たったこれだけの記述で、上記の機能の全てに対応しています。</p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex ("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Glossiness ("Smoothness", Range(0,1)) = 0.5<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Metallic ("Metallic", Range(0,1)) = 0.0<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType"="Opaque" }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LOD 200<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Physically based Standard lighting model, and enable shadows on all light types<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Use shader model 3.0 target, to get nicer looking lighting<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; half _Glossiness;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; half _Metallic;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // #pragma instancing_options assumeuniformscaling<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UNITY_INSTANCING_BUFFER_START(Props)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // put more per-instance properties here<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UNITY_INSTANCING_BUFFER_END(Props)<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf (Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Albedo comes from a texture tinted by color<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Metallic and smoothness come from slider variables<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = _Metallic;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = _Glossiness;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <h2>どうやって実現されているのか</h2>
+    <p>上記のコードを見てもらえればわかりますが、ほとんど処理らしいことは何もしていません。それなのになぜ、物理ベースシェーディングやシャドウなどの高度な機能が実現できるのでしょうか？<br>
+      また、頂点シェーダーも見当たりません。座標変換はどうしているのでしょうか？</p>
+    <p>実は<strong>Unityは、サーフェイスシェーダーのコードを基に、シェーダーコードを自動生成している</strong>のです。<br>
+      上記のコードから、約1600行にもなるシェーダーコードを自動生成しています。</p>
+    <p>頂点シェーダーの座標変換や、物理ベースシェーディングの計算、シャドウの処理などは、定型的なものであるため、サーフェイスシェーダーを使うとUnityが自動生成してくれるというわけです。</p>
+    <p>次のようなイメージです。Standardシェーダーの機能を実現するには、本来、下図の全ての処理が必要なのですが、サーフェイスシェーダーを利用することで、黄色部分のみの記述でStandardシェーダーと同等機能のカスタムシェーダーを作ることができます。</p>
+    <p><img src="image/2021-01-24_22h53_54.png" alt=""></p>
+    <h2>サーフェイスシェーダーの今後</h2>
+    <p>長きに渡ってUnityでのシェーダー作成をサポートしてきたサーフェイスシェーダーですが、今後もずっと活躍するわけではなさそうです。</p>
+    <p><strong>HDRPとURPではサーフェイスシェーダーが使えない</strong>からです。</p>
+    <p>HDRPおよびURPで同等のことを行いたい場合は、<strong>Shader Graph</strong>を使います。</p>
+    <p class="column"><b>HDRPとURP</b><br>
+      <br>
+      従来、Unityのレンダーパイプラインは1つしかなく、描画処理に対する大掛かりな変更や改造はできませんでしたが、スクリプタブルレンダーパイプラインという仕組みが追加されたことにより、レンダーパイプラインをユーザーが作れるようになりました。とはいっても、レンダーパイプラインをイチから作成するのは大変であるため、すぐ使える2種類のテンプレート「HDRP」と「URP」が用意されています。これらと区別するために、従来のレンダーパイプラインは「ビルトインレンダーパイプライン」と呼ばれています。<br>
+      <br>
+      そして、ビルトインレンダーパイプラインはそのうち廃止され、デフォルトのレンダーパイプラインの座をHDRPとURPに明け渡すということをUnityは計画しているようです。</p>
+    <h1>サーフェイスシェーダーの基本</h1>
+    <p>新規作成したStandard Surface Shaderの内容を解説します。重要度の低いコードについては削除しています。また、少しだけコードの順序を並び替えています。</p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // プロパティの書き方は、頂点・フラグメントシェーダーと同じです。</span><br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex ("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Glossiness ("Smoothness", Range(0,1)) = 0.5<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Metallic ("Metallic", Range(0,1)) = 0.0<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// タグの書き方は、頂点・フラグメントシェーダーと同じです。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // surfaceシェーダーの関数名はsurfだよ、という宣言。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 「Standard」はライティング種類の指定。他の種類を指定することもできる。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 「fullforwardshadows」→よくわかりません...とりあえずつけとこ</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // このシェーダーはシェーダーモデル3.0の機能を使うよ、という宣言。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // デバイスがシェーダーモデル3.0に対応していない場合は実行されずにFallbackされる。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // surf関数の入力構造体。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ここで変数を定義すると、サーフェイスシェーダー関数に値が渡される。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // メンバー変数の名前は自由ではない。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // <em>あらかじめ決められた規則に則って命名する必要がある</em>。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // テクスチャのプロパティ名に「uv」を付けると、<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // そのテクスチャを参照するためのUV座標が取得できる。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // （TillingとOffsetが適用済みの値）</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // プロパティの変数宣言。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 場所と順番を整理しました。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; half _Glossiness;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; half _Metallic;<br>
+      <br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // サーフェイス関数。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // この関数の役割は、出力構造体（SurfaceOutputStandard）に中身を詰めること。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 出力構造体にAlbedo、Metallic、Smoothnessなどを設定するだけで、<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // その後のシェーディング処理で適切に物理ベースシェーディングが行われる。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf (Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Albedo（光や影の影響受けていない状態の地の色）を計算する。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // テクスチャにベースカラーを乗算したものとする。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Metallic、Smoothnessはプロパティの値をそのまま設定</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = _Metallic;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = _Glossiness;<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // アルファ値はベースカラーのアルファ値を設定。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ただし、現状、アルファ値を設定しても変化はない。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // デバイスが対応するシェーダーが見つからなかった場合は、このシェーダー（Diffuse）が実行される。<br>
+        &nbsp;&nbsp;&nbsp; // 影の処理を正しく行うためにもこの記述は必要。</span><br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>とりあえずテクスチャーの動作確認にはこれを使ってください：</p>
+    <img src="image/jari-albedo.png" alt="" style="width: 304px; height: 304px;">
+    <p><br>
+    </p>
+    <p>サーフェイスシェーダーに関する詳細は<a href="https://docs.unity3d.com/ja/current/Manual/SL-SurfaceShaders.html"
+        target="_blank">公式マニュアル</a>を参照してください。</p>
+    <h1>ノーマルマップ</h1>
+    <h2>ノーマルマップの対応</h2>
+    <p>現状、ノーマルマップに対応していません。ノーマルマップを使えるようにしましょう。</p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>_NormalMap("Normal", 2D) = "bump" {}</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Glossiness ("Smoothness", Range(0,1)) = 0.5<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Metallic ("Metallic", Range(0,1)) = 0.0<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float2 uv_NormalMap;</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; half _Glossiness;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; half _Metallic;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf (Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      <em><span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ノーマルマップ画像からサンプリングする。<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // そのままだと圧縮されているので、UnpackNormal()でxyzそれぞれ-1～+1の範囲にする。<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // その値をo.Normalに格納しておけば、後は勝手に良い感じにシェーディングしてくれる。</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_NormalMap));</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = _Metallic;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = _Glossiness;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <p><code>o.Normal</code>に<strong>接空間の法線</strong>を格納しておくだけで、あとは勝手に良い感じにシェーディングされます。</p>
+    <p>動作確認のためのノーマルマップにはとりあえず次の画像を使ってください：</p>
+    <img src="image/jari-normal.png" alt="" style="width: 291px; height: 291px;">
+    <p><br>
+    </p>
+    <img src="image/2021-01-25_00h24_38.png" alt="">
+    <h2>無駄なTilling、Offsetの除去</h2>
+    <p>上記のコードでは、AlbedoのテクスチャーとノーマルマップのテクスチャーのTilling、Offsetを別々に設定できてしまいますが、実運用上、異なる値を設定することはほとんど無いでしょう。以下のようにすることで、無駄な設定項目が減り、シェーダーコードも短くなります。</p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>[NoScaleOffset]</em> _NormalMap("Normal", 2D) = "bump" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Glossiness ("Smoothness", Range(0,1)) = 0.5<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Metallic ("Metallic", Range(0,1)) = 0.0<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>//float2 uv_NormalMap; </u>// 削除<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; half _Glossiness;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; half _Metallic;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf (Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      <span style="color: #219a43;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ノーマルマップ画像からサンプリングする。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // そのままだと圧縮されているので、UnpackNormal()でxyzそれぞれ-1～+1の範囲にする。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // その値をo.Normalに格納しておけば、後は勝手に良い感じにシェーディングしてくれる。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Normal = UnpackNormal(tex2D(_NormalMap, <em>IN.uv_MainTex</em>)); <em>// _MainTexと同じUV座標を使う</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = _Metallic;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = _Glossiness;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <h1>Metallicマップ、Smoothnessマップ</h1>
+    <p>現状、MetallicとSmoothnessの指定が数値での指定しかできません。つまり、全体一律での指定しかできず、場所によって質感を変えることができません。<br>
+      これでは、物理ベースシェーディングの力を半分ほどしか活かせていません。</p>
+    <p>物理ベースシェーディングでは、特に、Smoothnessマップの力が大きいです。場所によってSmoothnessの値を変えて、光沢のあるところと無いところを作ることにより、表面に光が当たったときに複雑な表情を見せてリアルさを生むのです。</p>
+    <p>というわけで、Smoothnessマップに対応しましょう。Smoothnessマップのデータの持ち方はアプリケーションによって異なりますが、UnityのStandardシェーダーでは、Metallicマップと一緒にするのが一般的です。<br>
+      MetallicマップのRチャンネルにMetallicの値を格納し、AチャンネルにSmoothnessの値を格納します。</p>
+    <p>この画像がそうなっているので、とりあえずこの画像を使っていきましょう：</p>
+    <p><img src="image/ConcreteWall_MetallicSmooth.png" style="width: 210px; height: 210px;"></p>
+    <p>※コンクリート表面のMetallicとSmoothnessを表す画像です。全体を通してRGBは0（非金属のため）で、アルファ値に様々な値が入っています（ツルツルの部分のアルファ値が高く、ザラザラの部分のアルファ値が低い）。</p>
+    <p><br>
+    </p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _NormalMap("Normal", 2D) = "bump" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>[NoScaleOffset] _MetallicSmoothness("Metallic(R), Smoothness(A)", 2D) = "black" {}</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>// _Glossiness ("Smoothness", Range(0,1)) = 0.5</u><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>// _Metallic ("Metallic", Range(0,1)) = 0.0</u><br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>sampler2D _MetallicSmoothness;</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>// half _Glossiness;</u><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>// half _Metallic;</u><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf (Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+          style="color: #219a43;">// Metallic＆Smoothnessマップをサンプリングする</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 ms = tex2D(_MetallicSmoothness, IN.uv_MainTex);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+          style="color: #219a43;">// RチャンネルをMetallicとして使う</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = ms.r;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+          style="color: #219a43;">// AチャンネルをSmoothnessとして使う</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = ms.a;</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <p><br>
+    </p>
+    <p><img src="image/smoothness.gif" alt=""></p>
+    <p><br>
+    </p>
+    <p>AlbedoマップとNormalマップも一緒に適用してみましょう！</p>
+    <img src="image/ConcreteWall_Albedo.png" alt="" style="width: 207px; height: 207px;"> &nbsp; <img
+      src="image/ConcreteWall_Normal.png" alt="" style="width: 207px; height: 207px;"><br>
+    <p><br>
+    </p>
+    <p>これで標準のStandardシェーダーとほぼ同等の機能になりました。</p>
+    <h1>よく使いそうな変数を取得する</h1>
+    <h2>ワールド空間座標を取得する例</h2>
+    <p>独自のシェーダーを書いていると「ワールド空間座標を欲しいな」とか「ワールド空間の法線が欲しいな」とかいったことがよくあります。<br>
+      そのような場合は、大抵、入力構造体に決まった名前で変数を宣言しておくと、Unityが自動的に代入しておいてくれます。</p>
+    <p>例えば、ワールド空間座標を使うサーフェイスシェーダーを作ってみましょう。</p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _NormalMap("Normal", 2D) = "bump" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MetallicSmoothness("Metallic(R), Smoothness(A)", 2D) = "black" {}<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float3 worldPos; // ワールド座標を取得する。この名前じゃないと駄目。</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MetallicSmoothness;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf (Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em
+        style="color: #219a43;">// ワールド座標のyの小数点以下が0.5未満なら描画しない</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>clip(frac(IN.worldPos.y) - 0.5);</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 ms = tex2D(_MetallicSmoothness, IN.uv_MainTex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = ms.r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = ms.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <p><br>
+    </p>
+    <p><img src="image/2021-01-25_01h22_44.png" alt=""></p>
+    <p><br>
+    </p>
+    <h2>入力構造体から取得できる値</h2>
+    <p>入力構造体から取得できる値は他に以下のようなものがあります。</p>
+    <table style="width: 100%" border="1">
+      <tbody>
+        <tr>
+          <td>型</td>
+          <td>変数名（厳守）</td>
+          <td>説明</td>
+        </tr>
+        <tr>
+          <td>float3</td>
+          <td>viewDir</td>
+          <td><strong>o.Normalに書き込みがあるかどうかで挙動が大きく変わるので注意</strong>。<br>
+            o.Normalに書き込みが無い場合：ワールド空間での視線ベクトル（面からカメラの方向）。<br>
+            o.Normalに書き込みがある場合：接空間での視線ベクトル（面からカメラの方向）。</td>
+        </tr>
+        <tr>
+          <td>float4</td>
+          <td>任意の名前にCOLORセマンティクスを付ける<br>
+            例：<br>
+            float4 vertColor : COLOR;</td>
+          <td>頂点カラー</td>
+        </tr>
+        <tr>
+          <td>float4</td>
+          <td>screenPos</td>
+          <td>スクリーン空間座標</td>
+        </tr>
+        <tr>
+          <td>float3</td>
+          <td>worldPos</td>
+          <td>ワールド空間座標</td>
+        </tr>
+        <tr>
+          <td>float3</td>
+          <td>worldRefl</td>
+          <td>ワールド空間の反射ベクトル。<br>
+            ただし、ノーマルマップを使う（o.Normalに対して書き込みが発生する）場合は次の項目を使う必要がある。</td>
+        </tr>
+        <tr>
+          <td>float3</td>
+          <td>worldRefl; INTERNAL_DATA</td>
+          <td>ノーマルマップを使う（o.Normalに対して書き込みが発生する）場合かつワールド空間の反射ベクトルが使いたい場合に宣言が必要。<br>
+            ただし、これを宣言しただけで、ワールド空間反射ベクトルが得られるわけではないので注意。<br>
+            surf関数内で<code>WorldReflectionVector(IN, o.Normal)</code>とすると、戻り値でワールド空間反射ベクトルが得られる。</td>
+        </tr>
+        <tr>
+          <td>float3</td>
+          <td>worldNormal</td>
+          <td>ワールド空間の法線ベクトル。<br>
+            ただし、ノーマルマップを使う（o.Normalに対して書き込みが発生する）場合は次の項目を使う必要がある。</td>
+        </tr>
+        <tr>
+          <td>float3</td>
+          <td>worldNormal; INTERNAL_DATA</td>
+          <td>ノーマルマップを使う（o.Normalに対して書き込みが発生する）場合かつワールド空間の法線ベクトルが使いたい場合に宣言が必要。<br>
+            ただし、これを宣言しただけで、ワールド空間法線ベクトルが得られるわけではないので注意。<br>
+            surf関数内で<code>WorldNormalVector(IN, o.Normal)</code>とすると、戻り値でワールド空間反射ベクトルが得られる。</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><br>
+    </p>
+    <p>o.Normalに対して書き込みが発生する場合のワールド空間反射ベクトルおよびワールド空間法線ベクトルを取得するときの手順が非常にわかりづらいです。<br>
+      どうやら、サーフェイスシェーダーはo.Normalに対して書き込みがあるかどうかで内部処理が変化するようです。<br>
+      o.Normalに対して書き込みが無い場合は、ワールド空間反射ベクトルおよびワールド空間法線ベクトルを取得するのは変数を宣言するだけなので簡単ですが、o.Normalに対して書き込みがある場合は、ひと手間必要です。実際の使い方は後述します。</p>
+    <h1>Emission</h1>
+    <p>出力構造体 <code>SurfaceOutputStandard</code> には<code>Emission</code>というメンバー変数（<code>half3</code>型）があり、これに色を設定することで、発光を表すことができます。自己発光を行う物体や、もしくはリムライトや光るアウトラインなどの追加の発光処理は、<code>Albedo</code>に色を設定するのではなく、<code>Emission</code>に光の量を設定しましょう（光を<code>Albedo</code>に加算してしまうと、物理ベースシェーディングが適切に行われない）。</p>
+    <p>ここでは、リムライトを試してみましょう。</p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _NormalMap("Normal", 2D) = "bump" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MetallicSmoothness("Metallic(R), Smoothness(A)", 2D) = "black" {}<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _RimColor("Rim Color", Color) = (1, 1, 1, 1)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _RimPower("Rim Power", Range(0.5,8.0)) = 3.0</em><br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float3 viewDir; // 視線ベクトル</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MetallicSmoothness;<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 _RimColor;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _RimPower;</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf (Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 ms = tex2D(_MetallicSmoothness, IN.uv_MainTex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = ms.r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = ms.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      <br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // IN.viewDirは接空間視線ベクトル。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // o.Normalは接空間法線ベクトル。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float rim = 1.0 - dot(IN.viewDir, o.Normal);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 算出した明るさはEmissionに格納する。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Emission = _RimColor.rgb * pow(rim, _RimPower);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <img src="image/2021-01-25_02h02_46.png" alt="">
+    <h1>ワールド空間法線ベクトルを使う</h1>
+    <p>ノーマルマップを使った場合のワールド空間の法線ベクトルを取得する処理が少しややこしいので、試してみましょう。<br>
+      今回は、ワールド空間の法線ベクトルを使って、雪が積もって白くなるようなシェーダーを作ってみます。</p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _NormalMap("Normal", 2D) = "bump" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MetallicSmoothness("Metallic(R), Smoothness(A)", 2D) = "black" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>_SnowThreshold("Snow Threshold", Range(-1, 1)) = 0.5</em><br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float3 worldNormal; INTERNAL_DATA // ワールド空間法線を取得するのに必要</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MetallicSmoothness;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float _SnowThreshold;</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf (Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 ms = tex2D(_MetallicSmoothness, IN.uv_MainTex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = ms.r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = ms.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      <br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ワールド空間法線を取得する<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 normal = WorldNormalVector(IN, o.Normal);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ワールド空間法線が上向きであるほど雪判定（1=雪、0=雪じゃない）<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float snow = step(_SnowThreshold, normal.y);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 雪の部分は白くする<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo.rgb = lerp(o.Albedo.rgb, float3(1, 1, 1), snow);</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <p><br>
+    </p>
+    <p><img src="image/snow.gif" alt=""> </p>
+    <p>ワールド空間法線を求める処理<code>WorldNormalVector()</code>およびその引数がけっこう謎ですが、そういうものだと割り切りましょう。そういうものなのです。Unityがそういうふうにできているから。あまり深追いしても意味がありません（深追いして後悔したマン）。</p>
+    <h1>半透明のシェーダー</h1>
+    <p>現状、出力構造体の<code>o.Alpha</code>に1未満の値を設定しても、半透明にはなりません。<br>
+      サーフェイスシェーダーで半透明描画を行いたい場合は、次の指定を追加します。</p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _NormalMap("Normal", 2D) = "bump" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MetallicSmoothness("Metallic(R), Smoothness(A)", 2D) = "black" {}<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags {<em>"Queue" = "Transparent"</em> "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows <em>alpha</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MetallicSmoothness;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf (Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 ms = tex2D(_MetallicSmoothness, IN.uv_MainTex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = ms.r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = ms.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>ただし、この指定の場合は、MetallicやSmoothnessの値に応じて光沢が残ります。</p>
+    <p><img src="image/2021-01-25_02h33_12.png" alt=""></p>
+    <p>ガラスのような物体向けです。</p>
+    <p>光沢も残さずに透明にしたい場合は、次のように指定します。</p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color ("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _NormalMap("Normal", 2D) = "bump" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MetallicSmoothness("Metallic(R), Smoothness(A)", 2D) = "black" {}<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags {"Queue" = "Transparent" "RenderType"="Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows <em>alpha:fade</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MetallicSmoothness;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf (Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 ms = tex2D(_MetallicSmoothness, IN.uv_MainTex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = ms.r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = ms.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <p><br>
+    </p>
+    <h1>頂点モディファイヤ</h1>
+    <h2>頂点座標をいじる</h2>
+    <h2>頂点シェーダーからパラメーターをsurf関数に渡す</h2>
+    <h1>マルチパスなサーフェイスシェーダー</h1>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><a href="../">目次へ戻る</a></p>
+    <p><br>
+    </p>
+  </body>
+</html>
