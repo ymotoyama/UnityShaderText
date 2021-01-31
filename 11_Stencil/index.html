@@ -315,6 +315,7 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { <em>"Queue" = "Geometry+2"</em> "RenderType" = "Opaque" }<br>
       <br>
       <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZTest Always // デプステストには常に合格する（手前に壁があろうと描画する）<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZWrite Off // デプスバッファへの書き込みはしない<br>
         <br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stencil {<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ref 1 // 基準値は1<br>
@@ -349,6 +350,7 @@
     <img src="image/2021-01-17_17h39_33.png" alt="">
     <p>2パス目では<code>"Queue" = "Geometry+2"</code>を指定することにより、1パス目よりさらに後に描画を行っています。</p>
     <p><code>ZTest Always</code>を指定して、デプステストには常に合格するようにしています。これを指定しないと、壁に遮られている場合はデプステスト不合格となり、描画が行えません。</p>
+    <p><code>ZWrite Off</code>を指定して、デプスバッファへの書き込みをしないようにしています。そうしないと、デプスバッファの値が、シルエットを描画した部分だけ凹んでしまうことになり、後々のトラブルの元です。</p>
     <p>Stencil構文により、ステンシルバッファが1ではないときのみ合格するようにしています。これで、壁に遮られた場所にのみシルエットの描画が行われます。</p>
     <p><br>
     </p>
