@@ -13,7 +13,7 @@
     <p class="title">カットアウト（切り抜き）</p>
     <p>カットアウト（切り抜き）シェーダーを学びます。<br>
       後半では、オブジェクトをスライス（輪切り）したり、ディゾルブさせたりするシェーダーを作ります。</p>
-    <p><img src="image/2020-12-10_22h19_57.png" alt="">　<img src="image/dissolvehdr.gif"
+    <p><img src="image/2020-12-10_22h19_57.png" alt="">　<img src="image/dissolvehdr.gif"
         alt=""></p>
     <h1>基本のカットアウトシェーダー</h1>
     <h2>カットアウトしない場合</h2>
@@ -228,9 +228,9 @@
       <code>キー=値</code>の形式で複数設定できます。<br>
       上記でいうと、<code>Queue</code>や<code>RenderType</code>がキーで、<code>AlphaTest</code>や<code>TransparentCutout</code>が値です。</p>
     <p><code>Queue</code>はレンダリングの順序を指定するものです。効率化や半透明描画のため、ここで指定されたグループごとにおおまかに描画順が分けられます。今回指定した<code>AlphaTest</code>という値は、デフォルトよりも後の描画になります。カットアウトするシェーダーはそうでないシェーダーに比べると負荷が高いため、なるべく後で描画したほうが効率が良いようです（深度テストで弾かれればカットアウトの処理が呼ばれないから？）<br>
-      <code>Queue</code>に指定可能な項目の詳細は<a href="mailto:https://docs.unity3d.com/ja/2019.4/Manual/SL-SubShaderTags.html"
-        target="_blank">公式マニュアル</a>を参照してください。</p>
-    <p><code>RenderType</code>は描画の種類を表すもので、Unity本体が<a href="https://docs.unity3d.com/ja/2019.4/Manual/SL-ShaderReplacement.html"
+      <code>Queue</code>に指定可能な項目の詳細は<a href="https://docs.unity3d.com/ja/2019.4/Manual/SL-SubShaderTags.html"
+        target="_top">公式マニュアル</a>を参照してください。</p>
+    <p><code>RenderType</code>は描画の種類を表すもので、Unity本体が<a href="https://docs.unity3d.com/ja/2019.4/Manual/SL-ShaderReplacement.html"
         target="_blank">Replaced Shader</a>という機能でなんやかんやするために使われます。よく使われる値は以下の2つです。</p>
     <ul>
       <li>Opaque：不透明のオブジェクトはこれを指定する</li>
@@ -330,7 +330,7 @@
       <br>
       フラグメントシェーダーでは、上記のように、frac()を使ったり、かけたり、足したり、引いたり…様々な計算を行って値をいじくります。<br>
       慣れてくると、結果が頭の中で想像できるようになるのですが、慣れないうちは大変です。そのようなときは、グラフによる可視化が役に立ちます。<br>
-      上記でグラフの画像が掲載されていますが、そのグラフは<a href="https://www.iquilezles.org/apps/graphtoy/"
+      上記でグラフの画像が掲載されていますが、そのグラフは<a href="https://www.iquilezles.org/apps/graphtoy/"
         target="_blank">Graphtoy</a>というWebサイトで作ったものです。<br>
       シェーダーに慣れないうちは（慣れても複雑な計算を行うときは）使ってみてください。</p>
     <a href="mailto:https://www.iquilezles.org/apps/graphtoy/" target="_blank"> </a>
@@ -666,7 +666,7 @@
       <li>SetColor()</li>
       <li>SetVector()</li>
     </ul>
-    <p>あたりでしょうか。それ以外は<a href="https://docs.unity3d.com/ja/current/ScriptReference/Material.html"
+    <p>あたりでしょうか。それ以外は<a href="https://docs.unity3d.com/ja/current/ScriptReference/Material.html"
         target="_blank">Materialのマニュアル</a>を参照してください。</p>
     <p><br>
     </p>

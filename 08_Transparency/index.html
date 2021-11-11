@@ -29,13 +29,13 @@
     <p>このデプスバッファは3D描画のために非常に重要です。<br>
       <img src="image/depth.gif" alt=""></p>
     <p>上図では、キューブの手前にスフィアが描画されていますが、この前後関係を正しく描画するのにデプスバッファが役立っています。<br>
-      現代の3Dの描画では、並列処理で高速化するために、描画順が特に定まっていません。<br>
+      現代の3Dの描画では、並列処理で高速化するために、オブジェクトの描画順が特に定まっていません。<br>
       上図をレンダリングする際に、キューブとスフィアのどちらが先に描画されるかがわからないということです。<br>
-      キューブが先に描画されれば、スフィアが後から上書きで描画すれば良いので問題なさそうですが、スフィアが先に描画されてしまったら、後から描画されたキューブが上書きして手前に描画されてしまいそうです。<br>
-      しかし、そうはなりません。デプスバッファのおかげです。</p>
+      キューブが先に描画されれば、スフィアが後から上書きで描画すれば良いので問題なさそうですが、逆にスフィアが先に描画されてしまったら、後から描画されたキューブが上書きして手前に描画されてしまいそうですよね。<br>
+      しかし、実際には、そうなりません。これはデプスバッファのおかげです。</p>
     <p>フラグメントシェーダーの前工程として、「<strong>デプステスト</strong>」と呼ばれる工程が存在します。</p>
     <p><img src="image/PipelineCullDepth.png" alt=""></p>
-    <p>引用：<a href="https://docs.unity3d.com/ja/2018.4/Manual/SL-CullAndDepth.html"
+    <p>引用：<a href="https://docs.unity3d.com/ja/2018.4/Manual/SL-CullAndDepth.html"
         target="_blank">https://docs.unity3d.com/ja/2018.4/Manual/SL-CullAndDepth.html</a></p>
     <p>デプステストでは、デプスバッファをチェックし、今描画しようとしているピクセルに深度値が書き込まれているかをチェックします。<br>
       深度値が書き込まれていなければ、テストは合格となり、フラグメントシェーダーに進みます。<br>
@@ -43,29 +43,112 @@
       今描画しようとしているピクセルのほうが手前の場合、テストは合格となり、フラグメントシェーダーに進みます。<br>
       今描画しようとしているピクセルのほうが奥の場合、テストは不合格となり、フラグメントシェーダーはスキップされ、描画は行われません。<br>
       （なお、これらはデフォルトの挙動であり、カスタマイズできます）</p>
-    <p>この仕組みにより、オブジェクトの前後関係を気にせずに描画を行うことができるのです。</p>
-    <p>わざとデプステストを無効にすると、次のように前後関係がおかしくなってしまいます。</p>
-    <img src="image/depthoff.gif" alt="">
+    <p>この仕組みにより、順序を気にせずにオブジェクトの描画を行うことができるのです。</p>
+    <h2>デプステストの指定方法</h2>
+    <p>デプステストは、デフォルトでは、手前のオブジェクトが手前に描画されるようになっていますが、変更することも可能です。デプステストの指定を変えてみましょう。</p>
+    <h3>デプスバッファへの書き込みの有効/無効</h3>
+    <p class="source">Shader "Unlit/DepthTestTest"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      <em>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZWrite Off // デプスバッファの書き込みを無効に<br>
+      </em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 _Color;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag() : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p>上記のように<code>ZWrite Off</code>と記述することで、デプスバッファへの深度値の書き込みを無効にすることができます。</p>
+    <img src="image/ZWriteOff.gif" alt=""><br>
+    ↑デプスバッファへの書き込みを無効にしたことにより、前後関係がおかしくなっている。
+    <p><code>ZWrite On</code>と記述すると、深度値の書き込みが有効になります（デフォルト値なので指定する意味はない）。
+    </p>
+    <p>これらを記述する場所は、SubShaderブロックまたはPassブロックの中です（ただし、CGPROGRAM～ENDCGの外側）。有効範囲は記述したブロック内です。</p>
+    <p></p>
+    <p><br>
+    </p>
+    <h3>デプステストの指定</h3>
+    <p><code>ZTest</code>を指定すると、デプステストの深度値の比較方法を変更できます。</p>
+    <p class="source">Shader "Unlit/DepthTestTest"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZWrite On<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZTest Always // デプステストに常に合格する（常に描画する）<br>
+      </em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 _Color;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag() : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p><code>ZTest Always</code>を指定すると、常にデプステストに合格します（奥にあったとしても前面に描画されます）。</p>
+    <p><code>ZTest LEqual</code>を指定すると、デプスバッファに既に書き込まれている深度値より、今書き込もうとしているピクセルの深度値のほうが小さいか等しい（Less or Equal）とき、デプステストに合格します（描画される）。これがデフォルト値です。</p>
+    その他の指定については<a href="https://docs.unity3d.com/ja/2018.4/Manual/SL-CullAndDepth.html"
+      target="_blank">公式マニュアル</a>をご覧ください。<br>
     <p><br>
     </p>
     <p class="column"><b>昔は無かった</b><br>
       <br>
       便利なデプスバッファですが、3D黎明期はありませんでした。<br>
       例えば、初代プレイステーションなどにはありませんでした。<br>
-      そのため、プログラムでソートしてから距離順に描画していたそうです。</p>
+      そのため、プログラムで距離順にソートし、奥のものから先に描画していたそうです。</p>
     <h2>半透明との相性の悪さ</h2>
     <p>このように便利なデプスバッファ法ですが、半透明描画との相性は悪いです。<br>
-      デプスバッファ法は、オブジェクトが不透明であることを前提としています。最終結果のピクセルには1つのオブジェクトの色しか出力されないからです。<br>
+      <strong>デプスバッファ法は、オブジェクトが不透明であることを前提としています</strong>。最終結果のピクセルには1つのオブジェクトの色しか出力されないからです。<br>
       しかし、半透明描画というのは、複数のオブジェクトの色が混ざり合うことを意味します。<br>
       デプスバッファ法による「描画するか、しないか」という二元論では、半透明を実現できないのです。</p>
     <h1>ブレンド</h1>
     <h2>Blending</h2>
     <p>半透明を実現するために、3Dの描画パイプラインには<strong>Blending</strong>という工程が存在します。</p>
     <p><img src="image/PipelineCullDepth.png" alt=""></p>
-    <p>引用：<a href="https://docs.unity3d.com/ja/2019.4/Manual/SL-Blend.html"
+    <p>引用：<a href="https://docs.unity3d.com/ja/2019.4/Manual/SL-Blend.html"
         target="_blank">https://docs.unity3d.com/ja/2019.4/Manual/SL-Blend.html</a></p>
     <p>フラグメントシェーダーが出力した色と、フレームバッファに元々書き込まれていた色を混ぜる工程です。<br>
-      <strong>デフォルトでは、色を混ぜずに単純に上書きしますが、指定を行うことで様々な方法で色を混ぜることができます</strong>。</p>
+      <strong>デフォルトでは、色を混ぜずに単純に上書きしますが、ブレンドモードの指定を行うことで、様々な方法で色を混ぜることができます</strong>。</p>
     <h2>ブレンドモード</h2>
     <p>色のブレンドを行いたいときは、ブレンド方法を指定します。</p>
     <p>Passブロックの中に以下の形式で記述します。</p>
@@ -90,7 +173,7 @@
     <p><img src="image/2020-12-13_17h42_29.png"></p>
     <p>この指定の場合、アルファ値は意味は結果に影響を与えません。<br>
       アルファ値によって濃さを変えたい場合は、フラグメントシェーダーで、アルファ値をRGB値にかける必要があります。</p>
-    <p> ブレンドに関して詳しいことは<a href="https://docs.unity3d.com/ja/2019.4/Manual/SL-Blend.html"
+    <p> ブレンドに関して詳しいことは<a href="https://docs.unity3d.com/ja/2019.4/Manual/SL-Blend.html"
         target="_blank">Unityマニュアル</a>を参照してください。 </p>
     <p>なお、ブレンドを行うことで、最終結果のアルファ値が1以外の値に変化してしまっています。フレームバッファのアルファ値は特に使われないので、普通に描画する分には問題ありませんが、描画先がフレームバッファではなくレンダーテクスチャーの場合で、かつ、それを半透明描画しようとすると、意図しない結果になったりするので注意してください（半透明のマップやホログラム風のUIを実装しようとしたときなどになりがち）。</p>
     <h1>半透明のシェーダー</h1>
@@ -147,20 +230,20 @@
       }</p>
     <p><br>
     </p>
-    <p>最も重要なのは次の部分です。</p>
+    <p>今回、最も重要なのは次の部分です。</p>
     <p class="source">Blend SrcAlpha OneMinusSrcAlpha</p>
     <p>この記述によりブレンドが有効になり、フラグメントシェーダーの出力した色とフレームバッファの色がブレンドされます。</p>
     <p><br>
     </p>
     <p>今回、タグにて<code>Queue</code>（描画順グループ）を<code>Transparent</code>にしています。</p>
     <p class="source">Tags { <em>"Queue" = "Transparent"</em> "RenderType" = "Transparent" }</p>
-    <p>これを指定することで、2つの効果があります。</p>
+    <p>これを指定することで、Unityは以下の2つの制御を行います。</p>
     <ol>
-      <li>描画順が不透明オブジェクトの後になる</li>
-      <li>Transparentを指定されたオブジェクト同士は、カメラからの距離順でソートされ、遠いものから先に描画される</li>
+      <li>描画順を不透明オブジェクトの後にする</li>
+      <li>Transparentを指定されたオブジェクトを、カメラからの距離でソートし、遠いものから先に描画する</li>
     </ol>
-    <p>ブレンドの仕組み上、描画の順番は極めて重要です。そのため、まず先に全ての不透明オブジェクトを描画し、その後に半透明オブジェクトをまとめて描画します。<br>
-      さらに、奥から順に描画しなければ正しくブレンドできないため、距離によるソートが行われます（これはUnityが勝手にやってくれます）。</p>
+    <p>ブレンドの仕組み上、描画の順番は極めて重要です。そのため、まず先に全ての不透明オブジェクトを描画し、その後に半透明オブジェクトを描画する必要があります。<br>
+      さらに、半透明オブジェクトは、奥のものから先に描画しなければ正しくブレンドできないため、距離によるソートが必要です。<code>"Queue" = "Transparent"</code>の指定を行うことで、Unityがこれらの制御をやってくれるようになります。</p>
     <p><br>
     </p>
     <p>最後に、この記述について説明します。</p>
@@ -178,11 +261,11 @@
       しかし、それはそれで別の問題を引き起こします。<br>
       キャラクターなどの複雑な形状のオブジェクトをデプスバッファ書き込みなしの半透明で描画すると、次のようになってしまうのです。<br>
       <img src="image/2020-12-13_18h06_08.png" alt="" style="width: 287px; height: 320px;"></p>
-    <p>引用：<a href="http://tsubakit1.hateblo.jp/entry/2015/09/07/222755"
+    <p>引用：<a href="http://tsubakit1.hateblo.jp/entry/2015/09/07/222755"
         target="_blank">http://tsubakit1.hateblo.jp/entry/2015/09/07/222755</a></p>
     <p>欲しかった結果↓</p>
     <p><img src="image/2020-12-13_18h08_01.png" alt="" style="width: 283px; height: 356px;"></p>
-    <p>引用：<a href="http://tsubakit1.hateblo.jp/entry/2015/09/09/233000"
+    <p>引用：<a href="http://tsubakit1.hateblo.jp/entry/2015/09/09/233000"
         target="_blank">http://tsubakit1.hateblo.jp/entry/2015/09/09/233000</a></p>
     <p>キャラクターのような複雑な形状のものを半透明描画する場合は、かなり工夫を行う必要があります（上記リンク先を参照してください）。</p>
     <p>このため、最近のゲームでは、なるべく半透明という表現は避けられる傾向にあります。<br>
@@ -194,15 +277,15 @@
     <p>ディザ（Dither）というテクニックがあります。<br>
       昔、コンピューターでたくさんの色が扱えなかったころに、少ない色数でグラデーションを表現するために使われた技法です。</p>
     <p>例えば、下図の左のような元画像があったとして、白と黒の2色しか使えない環境で普通に表示しようとすると、右側のようになってしまいます。</p>
-    <p><img src="image/2020-12-13_19h57_51.png" alt="">引用：<a href="https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%A3%E3%82%B6"
+    <p><img src="image/2020-12-13_19h57_51.png" alt="">引用：<a href="https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%A3%E3%82%B6"
         target="_blank">https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%A3%E3%82%B6</a></p>
     <p>細かいグラデーションは完全に失われてしまいました。</p>
     <p>ディザを使って白黒2色に変換したものが下図になります。</p>
     <p><img src="image/2020-12-13_19h59_01.png" alt=""></p>
     <p>元画像には及びませんが、単純に白黒にしたものよりは、グラデーションが表現できています。<br>
-      このように、白と黒を良い感じに散布させることで中間の色を表現するテクニックをディザ（ディザリング）といいます。</p>
+      このように、白と黒を良い感じに散布させることでグラデーションを表現するテクニックをディザ（ディザリング）といいます。</p>
     <h2>ディザによるアルファ抜きとは</h2>
-    <p>最近のモニターは1677万色を表現できるので、ディザはほとんど使われなくなりましたが、ディザを応用して半透明を実現する手法が最近のゲームではよく使われます。</p>
+    <p>最近の一般的なモニターは1677万色（256×256×256）を表現できるので、ディザはほとんど使われなくなりましたが、ディザを応用して半透明を実現する手法が最近のゲームではよく使われます。</p>
     <p><img src="image/ditheralpha.gif" alt=""></p>
     <p>拡大するとこうです↓</p>
     <p><img src="image/ditheralphazoom.gif" alt=""></p>
