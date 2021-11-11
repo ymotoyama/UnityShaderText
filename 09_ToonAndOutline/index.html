@@ -14,11 +14,10 @@
     <p></p>
     <p>リアル調ではなくアニメ調のいわゆる<strong>トゥーンシェーダー</strong>や<strong>アウトライン</strong>（輪郭線）の描画技法について学んでいきます。</p>
     <h1>トゥーンレンダリングとは</h1>
-    <p>3D CGというものは、基本的には「リアルであるほど良い」という価値観で進化してきましたが、その流れには乗らず、「リアルにするのではなく、あえてアニメ風にする」という描画手法があります。そのような描画手法を「<strong>トゥーンレンダリング</strong>」と呼び、それを実現するシェーダーを「<strong>トゥーンシェーダー</strong>」と呼びます。</p>
+    <p>3D CGというものは、基本的には「リアルであるほど良い」という価値観で進化してきましたが、その流れには乗らず、「リアルにするのではなく、あえてアニメ風にする」という描画手法があります。そのような描画手法を「<strong>トゥーンレンダリング</strong>」と呼び、それを実現するシェーダーを「<strong>トゥーンシェーダー</strong>」と呼びます。「セルルック」と呼ぶこともあります。</p>
     <p> <img src="image/Toon-shader.jpg" alt="" style="width: 393px; height: 302px;"></p>
     <p>左：一般的なシェーディング　　右：トゥーンレンダリング<br>
       引用：<a href="https://ja.wikipedia.org/wiki/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB:Toon-shader.jpg"
-
         target="_blank">https://ja.wikipedia.org/wiki/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB:Toon-shader.jpg</a> </p>
     <p>トゥーンレンダリングには様々な表現方法がありますが、その多くが、以下の共通点を持っています。</p>
     <ul>
@@ -215,13 +214,13 @@
     <p><img src="image/BinaryToon2.gif" alt=""></p>
     <p><br>
     </p>
-    <p>一般的には、<code>lerp()</code>は「2つの値をブレンドするもの」ですが、シェーダーにおいては、<code>step()</code>と組み合わせて「2つの値のどちらか1つを選択するもの」として使うことが、よくあります。</p>
+    <p>一般的には、<code>lerp()</code>は「2つの値をブレンドするもの」ですが、シェーダーにおいては、<code>step()</code>と組み合わせて<strong>「2つの値のどちらか1つを選択するもの」として使う</strong>ことが、よくあります。</p>
     <p class="source">float3 color = lerp(_ShadowColor, _LightColor, diffuse);</p>
     <p>↑<code>diffuse</code>が0ならば<code>_ShadowColor</code>が返却され、1ならば<code>_LightColor</code>が返却される。</p>
     <p><br>
     </p>
     <h3>境界を滑らかにする</h3>
-    <p>現状、明るい場所と暗い場所がくっきりと分かれていますが、その境界を滑らかにしてみましょう。</p>
+    <p>現状、明るい場所と暗い場所がくっきりと分かれていますが、<code>smoothstep()</code>を使うと、境界をグラデーションにすることができます。</p>
     <p class="source">Shader "MyShader/BinaryToon"<br>
       {<br>
       &nbsp;&nbsp;&nbsp; Properties<br>
@@ -363,7 +362,6 @@
     <img src="image/2020-12-17_12h05_41.png"><br>
     <p>④のときに、なぜ<code>_Step</code>ではなく<code>(_Step - 1)</code>で割っているかというと、<code>_Step</code>で割ってしまうと、最も明るい場所でも<code>diffuse</code>の値が1にならないからです（下図A）。<code>(_Step - 1)</code>で割ると、最も明るい場所の<code>diffuse</code>が1になるようになります（下図B）。</p>
     <img src="image/2020-12-17_12h10_47.png" alt="">&nbsp; <img src="image/2020-12-17_12h11_47.png"
-
       alt=""><br>
     <p><br>
     </p>
@@ -421,7 +419,7 @@
       <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; diffuse = pow(diffuse, _ShadowPower);</em><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; diffuse *= _Step;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; diffuse -= frac(diffuse);<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; diffuse /= _Step;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; diffuse /= (_Step - 1);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(diffuse, diffuse, diffuse, 1);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
       <br>
@@ -573,7 +571,6 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// 表向きのポリゴンをカリング（裏向きのポリゴンのみ描画する）</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cull Front<br>
       <br>
@@ -589,11 +586,9 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert(float4 pos : POSITION, float3 normal : NORMAL) : SV_POSITION<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// 頂点座標を法線方向に移動（モデルを膨らませる）</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pos += float4(normal * _OutlineWidth, 0);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// オブジェクト空間からクリップ空間に変換して終了</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(pos);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
@@ -601,7 +596,6 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag() : SV_Target<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// 指定された色を返却するだけ。</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return _OutlineColor;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
@@ -618,9 +612,7 @@
     <p class="source"><span style="color: #219a43;">// 表向きのポリゴンをカリング（裏向きのポリゴンのみ描画する）</span><br>
       Cull Front</p>
     <p><code>Cull</code>構文でカリングの設定を行えます。<code>Cull</code>構文には以下の3つの指定があります。<a
-
         href="https://docs.unity3d.com/ja/2018.4/Manual/SL-CullAndDepth.html"
-
         target="_blank">公式マニュアル</a></p>
     <table style="width: 100%" border="1">
       <tbody>
@@ -654,9 +646,8 @@
       アウトラインを描画するために、本来の3Dモデルより少し大きく膨らませた3Dモデルとしているのです。<br>
       膨らませた3Dモデルでアウトラインを描画する関係上、前段の<code>Cull Front</code>の指定が重要になってきます。</p>
     <p><img src="image/cullback.gif" alt=""> &nbsp; <img src="image/cullfront.gif"
-
         alt=""></p>
-    <p>　　　　　　　　　　Cull Back　　　　　　　　　　　　　　　　　　　　　　Cull Front</p>
+    <p>　　　　　　　　2Pass目 Cull Back　　　　　　　　　　　　　　　　　　2Pass目 Cull Front</p>
     <br>
     <p class="column"><b>輪郭線がちぎれる件について</b><br>
       <br>
@@ -670,7 +661,6 @@
       ソフトエッジの場合はアウトラインがちぎれませんが、ハードエッジの場合はアウトラインがちぎれてしまいます。<br>
       では、すべてソフトエッジで作れば良いのかというと、もちろんそうではないわけで、この問題はなかなか難しい問題です。<br>
       <a href="https://cgworld.jp/feature/201806-unite-04toonshader01-3.html"
-
         target="_blank">アニメ調グラフィックのゲームの最高峰「GUILTY GEAR Xrd」では、メッシュデータをインポートする際に特殊なプログラムを走らせてこの問題に対処している</a>らしいです。</p>
     <p><br>
     </p>
@@ -724,11 +714,9 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.pos = UnityObjectToClipPos(v.pos);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// 法線ベクトルをワールド空間に変換</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.worldNormal = UnityObjectToWorldNormal(v.normal);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// 頂点座標をワールド空間に変換</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.worldPos = mul(UNITY_MATRIX_M, v.pos);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
@@ -737,23 +725,18 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag (v2f i) : SV_Target<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// テクスチャーから地の色を取得</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 baseColor = tex2D(_MainTex, i.uv);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// 視線ベクトル（面からカメラ方向のベクトル）を計算</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// 正面度合いを計算（カメラに向いている面は1、視線ベクトルと水平な面は0）</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float frontFace = dot(i.worldNormal, viewDir);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// アウトラインとすべきか判定。正面度合いがしきい値より小さい（縁である）場合は1、そうでなければ0となる</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float outline = step(frontFace, _OutlineWidth);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
-
         style="color: #219a43;">// 地の色にするかアウトラインの色にするか決める。</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return lerp(baseColor, _OutlineColor, outline);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
@@ -777,7 +760,7 @@
     </p>
     <p><br>
     </p>
-    <p>この手法は、単に「アウトライン（輪郭線）」としての使い方よりも、発光などを伴う「強調表示」として使われることが多いように思います。<br>
+    <p>この手法は、市販のゲームにおいては、単に「アウトライン（輪郭線）」としての使い方よりも、発光などを伴う「強調表示」として使われることが多いように思います。<br>
       例えば、「DOOM Eternal」というゲームでは、次のように、ターゲットやアイテムを強調表示するために使われていました。</p>
     <p> <img src="image/doom.gif" alt=""></p>
     <p>フラグメントシェーダーを少し書き換えれば、このようになります：</p>
@@ -804,7 +787,7 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float outline = step(frontFace, _OutlineWidth);<br>
       <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // アウトラインの発光具合を計算（アウトラインの場所じゃなければ(0,0,0,0)）<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 outlineColor = lerp(0, _OutlineColor, outline);<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 時間で発酵度合いに強弱をつける<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 時間で発光度合いに強弱をつける（0～1の範囲で揺らす）<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; outlineColor *= (sin(_Time.y * 8) / 2 + 0.5);<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 地の色にアウトラインの発光を加算<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return baseColor + outlineColor;</em><br>
@@ -816,8 +799,8 @@
     <h2>その他の技法</h2>
     <p>今回は紹介しませんが、アウトライン描画を実現する手法は上記以外にも、押し出しとステンシルバッファを併用する手法や、ポストエフェクトでデプスバッファを参照して実現する手法などが存在します。</p>
     <h1>練習問題</h1>
-    <p>2章の陰影のグラデーションを減色したものと3章のアウトライン表現を組み合わせて、トゥーンシェーダーを作成してください。</p>
-    <br>
+    <p>2-2(3)の陰影を好きな色の階調表示で行うシェーダーと3-1の押し出し法によるアウトライン表現を組み合わせて、トゥーンシェーダーを作成してください。</p>
+    <img src="image/2021-11-11_13h36_52.png" alt=""><br>
     <p><br>
     </p>
     <p><br>
