@@ -125,11 +125,11 @@
       }</p>
     <p>ステンシルは、この1つの構文で、「型の作成」と「型で抜くように描画」の2つの機能を兼ねているので、注意してください。よく初学者がつまづくポイントです。<br>
       <br>
-      Ref, Compなど、複数の命令から成りますが、<strong>すべての命令は省略可能</strong>です。また、上記以外にも命令がありますが、割愛します。詳細はUnityのマニュアルを参考にしてください：<a
-        href="https://docs.unity3d.com/ja/2018.4/Manual/SL-Stencil.html"
+      Ref, Compなど、複数の命令から成りますが、<strong>すべての命令は省略可能</strong>です。また、上記以外にも命令がありますが、割愛します。詳細はUnityのマニュアルを参考にしてください：<a
+        href="https://docs.unity3d.com/ja/2018.4/Manual/SL-Stencil.html"
         target="_blank">https://docs.unity3d.com/ja/2018.4/Manual/SL-Stencil.html</a></p>
     <h2>Ref命令と基準値</h2>
-    <p>Ref命令は基準値を設定します。基準値は0～255の整数が指定可能です。<br>
+    <p>Ref命令は基準値を設定します。基準値は0～255の整数が指定可能です。文献によっては「参照値」と呼ばれます。<br>
       <br>
       基準値は、次の2つの用途で使われます：</p>
     <ul>
@@ -192,7 +192,7 @@
     <h2>Pass命令/Fail命令/ZFail命令と更新処理</h2>
     <p>Pass命令は合格時にバッファをどのように更新するかを指定します。<br>
       Fail命令は、不合格時にバッファをどのように更新するかを指定します。<br>
-      ZFail命令は、ステンシルテストは合格だが、Zテスト（深度テスト）で不合格となった場合（描画しようとした位置よりも手前のオブジェクトが既に描画されているため、描画しないと判断された場合）にバッファをどうするかの指定です。</p>
+      ZFail命令は、ステンシルテストは合格だが、デプステスト（Zテストともいう）で不合格となった場合（描画しようとした位置よりも手前のオブジェクトが既に描画されているため、描画しないと判断された場合）にバッファをどうするかの指定です。</p>
     <p>バッファの更新処理は、以下の8種類があります：</p>
     <table border="1">
       <tbody>
@@ -255,13 +255,13 @@
       &nbsp;&nbsp;&nbsp; }<br>
       &nbsp;&nbsp;&nbsp; SubShader<br>
       &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // "Geometry+1"を指定することで、通常のオブジェクトよりも後に描画する<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "Queue" = "Geometry+1" "RenderType" = "Opaque" }<br>
+      <br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 1パス目。通常の描画を行う。<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ステンシルバッファに1を書き込む。<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // "Geometry+1"を指定することで、通常のオブジェクトよりも後に描画する<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { <em>"Queue" = "Geometry+1"</em> "RenderType" = "Opaque" }<br>
-      <br>
       <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stencil {<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ref 1 // 基準値は1<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Comp Always // 常にステンシルテストに合格<br>
@@ -311,9 +311,6 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp; そこに描画する）<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // "Geometry+2"を指定することで、上のPassよりさらに後に描画する<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { <em>"Queue" = "Geometry+2"</em> "RenderType" = "Opaque" }<br>
-      <br>
       <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZTest Always // デプステストには常に合格する（手前に壁があろうと描画する）<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZWrite Off // デプスバッファへの書き込みはしない<br>
         <br>
@@ -344,11 +341,10 @@
     <p><br>
     </p>
     <p>ポイントを解説します。</p>
-    <p>このシェーダーは2パスシェーダーです。1パス目で通常の描画を行い、2パス目でシルエットの描画を行っています。</p>
-    <p>1パス目で<code>"Queue" = "Geometry+1"</code>を指定することにより、描画をその他のオブジェクトより後にしています。これは、壁の描画が終わってから、その後にキャラクターの描画を行いたかったからです。</p>
-    <p>Stencil構文により、ステンシルバッファに1を書き込んでいます。壁に遮られている場合は、デプステスト（Zテスト）で不合格となり、ステンシルバッファへの書き込みも行われません。つまり、ステンシルバッファは初期値の0のままになります。これがミソで、キャラクターが描画された場所はステンシルバッファが1になり、何かに遮られて描画されなかった場所は0になるというわけです。</p>
+    <p><code>"Queue" = "Geometry+1"</code>を指定することにより、描画をその他のオブジェクトより後にしています。これは、壁の描画が終わってから、その後にキャラクターの描画を行いたかったからです。</p>
+    <p>次に、このシェーダーは2パスシェーダーです。1パス目で通常の描画を行い、2パス目でシルエットの描画を行っています。</p>
+    <p>Stencil構文により、ステンシルバッファに1を書き込んでいます。壁に遮られている場合は、デプステストで不合格となり、ステンシルバッファへの書き込みも行われません。つまり、ステンシルバッファは初期値の0のままになります。これがミソで、キャラクターが描画された場所はステンシルバッファが1になり、何かに遮られて描画されなかった場所は0になるというわけです。</p>
     <img src="image/2021-01-17_17h39_33.png" alt="">
-    <p>2パス目では<code>"Queue" = "Geometry+2"</code>を指定することにより、1パス目よりさらに後に描画を行っています。</p>
     <p><code>ZTest Always</code>を指定して、デプステストには常に合格するようにしています。これを指定しないと、壁に遮られている場合はデプステスト不合格となり、描画が行えません。</p>
     <p><code>ZWrite Off</code>を指定して、デプスバッファへの書き込みをしないようにしています。そうしないと、デプスバッファの値が、シルエットを描画した部分だけ凹んでしまうことになり、後々のトラブルの元です。</p>
     <p>Stencil構文により、ステンシルバッファが1ではないときのみ合格するようにしています。これで、壁に遮られた場所にのみシルエットの描画が行われます。</p>
@@ -358,9 +354,158 @@
     <p><img src="image/Fallguys.gif" alt=""></p>
     <p>引用：Fall Gus</p>
     <br>
-    <h1>ステンシルバッファの可能性</h1>
+    <h1>ステンシルの例 その3</h1>
+    <p>ステンシルバッファをうまく使いこなすと、本来穴が空いていない場所に穴を開けたような表現も可能になります。</p>
+    <p>以下のゲームは、「Hole.io」というスマホのカジュアルゲームです。</p>
+    <img src="image/Hole.io.gif" alt="">
+    <p>地面に穴を開けて、街中の物体を吸い込むというゲームです。地面に穴を開けて物を落としているビジュアルがかなり特徴的ですね。</p>
+    <p>実装方法ですが、実際にポリゴンを変形させて穴を開けているわけではなく、おそらくステンシルバッファを使って実現していると思われます。</p>
+    <p>真似してみましょう！</p>
+    <p><br>
+    </p>
+    <p>まず、穴を実現するための、特殊な3Dモデルを用意します。てっぺんのポリゴンを取り払った円柱を作りました。</p>
+    <p><img src="image/2021-11-11_18h59_17.png" alt=""></p>
+    <p><a href="https://github.com/ymotoyama/Samples/raw/master/hole_cylinder.fbx">こちら</a>からダウンロードしてください。</p>
+    <p><br>
+    </p>
+    <p>穴用のシェーダーを書きます。</p>
+    <p class="source">Shader "MyShader/Hole"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #208a17;">// 他のオブジェクトより先に描画したいので "Geometry-1" を指定</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "Queue" = "Geometry-1" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #208a17;">// 1Pass目。表面のデプスバッファ書き込みのみ行う</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZWrite On&nbsp;&nbsp; <span
+        style="color: #208a17;">// デプスバッファに書き込む</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ColorMask 0 <span
+        style="color: #208a17;">// カラーバッファに出力しない</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #208a17;">// 2Pass目。穴の内側を描画する</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cull Front <span
+        style="color: #208a17;">// 前面をカリングして、背面（裏面）のみ描画する</span><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #208a17;">// ステンシルの指定</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stencil {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ref 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #208a17;">// 基準値は1</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Comp Always&nbsp; <span
+        style="color: #208a17;">// 常にステンシルテスト成功</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass Replace <span
+        style="color: #208a17;">// ステンシルバッファを基準値に置き換える</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag() : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(0, 0, 0, 1); <span
+        style="color: #208a17;">// 黒で塗りつぶす</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    1Pass目で、デプスバッファへの書き込みのみ行います。<code>ColorMask 0</code>を指定すると、カラーバッファへの書き込みが行われません。
+    <p>2Pass目で、円柱の内側を描画します。<br>
+      内側を描画したいので、<code>Cull Front</code>を指定します。<br>
+      1Pass目でデプスバッファへの書き込みを行っているため、円柱の外側と被っている部分は描画されません。</p>
+    <p><img src="image/a.png" alt=""></p>
+    <p><img src="image/b.png" alt=""></p>
+    <p>このシェーダーを先ほどの円柱の3Dモデルに適用してください。<br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p>次は、穴を開けられる側の地面用シェーダーを書きましょう。</p>
+    <p class="source">Shader "MyShader/HoleGround"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex ("Texture", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #208a17;">// ステンシルの指定</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stencil {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ref 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #208a17;">// 基準値は1</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Comp NotEqual <span
+        style="color: #208a17;">// ステンシルバッファが基準値と異なる場合、テスト合格（描画される）</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass Keep&nbsp;&nbsp;&nbsp;&nbsp; <span
+        style="color: #208a17;">// テスト合格時、ステンシルバッファに対して変更はしない</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv&nbsp;&nbsp;&nbsp;&nbsp; : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct v2f<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv&nbsp;&nbsp;&nbsp;&nbsp; : TEXCOORD0;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : SV_POSITION;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f vert (appdata v)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; v2f o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.vertex = UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.uv = v.uv;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return o;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 frag (v2f i) : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 col = tex2D(_MainTex, i.uv);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return col;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      }</p>
+    <p>ステンシルで<code>Comp NotEqual</code>を指定することにより、ステンシルバッファの値が1ではない場合のみ描画が行われます。つまり、穴が描画された場所には地面が描画されなくなります。</p>
+    <p>ステンシルによる制御を行っている以外は、シンプルなテクスチャを描画するシェーダーです。</p>
+    <p>このシェーダーを、地面のオブジェクトに適用します。</p>
+    <p>穴を出入りするオブジェクトは、普通のシェーダーで大丈夫です。</p>
+    <img src="image/Hole.gif" alt="">
+    <p><br>
+    </p>
+    <h1>ステンシルバッファをもっとゴリゴリ使いたいとき</h1>
+    <p>この資料の例では、1度に1つの用途にしかステンシルバッファを使っていませんが、実際のゲームでは、ステンシルバッファを使った表現を同時に複数行いたいときもあるでしょう。その場合は、ステンシルのマスクという機能を使って、用途毎に使うビットを分けることができます。</p>
+    <p>詳細は<a href="https://docs.unity3d.com/ja/2018.4/Manual/SL-Stencil.html"
+        target="_top">公式マニュアル</a>のReadMaskおよびWriteMaskを参照してください。</p>
+    <h1>おわりに</h1>
     <p>ステンシルバッファは、基本的には型を作成して型抜きをする機能ですが、現実の型抜きとは違い、型の部分だけ描画したり、逆に描画しなかったりと、発想次第でものすごく多用な表現が可能です。</p>
-    <p>ぜひ色々と調べてみましょう。</p>
+    <p>ぜひ色々と調べたり、実験したりしてみましょう。</p>
     <p><br>
     </p>
     <p><br>
