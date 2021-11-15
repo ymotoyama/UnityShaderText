@@ -631,7 +631,7 @@
       public class DissolveTest : MonoBehaviour<br>
       {<br>
       &nbsp;&nbsp;&nbsp; public float m_Duration = 2f; // 消えるまでに要する時間（秒）<br>
-      &nbsp;&nbsp;&nbsp; float m_DissoveAmount = 0;<br>
+      &nbsp;&nbsp;&nbsp; float m_DissolveAmount = 0;<br>
       &nbsp;&nbsp;&nbsp; Material m_Material;<br>
       <br>
       &nbsp;&nbsp;&nbsp; private void Start()<br>
@@ -646,10 +646,10 @@
       <br>
       &nbsp;&nbsp;&nbsp; IEnumerator Dissolve()<br>
       &nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(m_DissoveAmount &lt; 1f)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(m_DissolveAmount &lt; 1f)<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_DissoveAmount += 1f / m_Duration * Time.deltaTime;<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_Material.SetFloat("_DissolveAmount", m_DissoveAmount);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_DissolveAmount += 1f / m_Duration * Time.deltaTime;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_Material.SetFloat("_DissolveAmount", m_DissolveAmount);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; yield return null;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
       &nbsp;&nbsp;&nbsp; }<br>
@@ -677,7 +677,7 @@
       public class DissolveTest : MonoBehaviour<br>
       {<br>
       &nbsp;&nbsp;&nbsp; public float m_Duration = 2f; // 消えるまでに要する時間（秒）<br>
-      &nbsp;&nbsp;&nbsp; float m_DissoveAmount = 0;<br>
+      &nbsp;&nbsp;&nbsp; float m_DissolveAmount = 0;<br>
       &nbsp;&nbsp;&nbsp; Material m_Material;<br>
       <br>
       <em>&nbsp;&nbsp;&nbsp; static readonly int DissolveAmountID = Shader.PropertyToID("_DissolveAmount");<br>
@@ -686,10 +686,10 @@
       <br>
       &nbsp;&nbsp;&nbsp; IEnumerator Dissolve()<br>
       &nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(m_DissoveAmount &lt; 1f)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(m_DissolveAmount &lt; 1f)<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_DissoveAmount += 1f / m_Duration * Time.deltaTime;<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_Material.SetFloat(<em>DissolveAmountID</em>, m_DissoveAmount);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_DissolveAmount += 1f / m_Duration * Time.deltaTime;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_Material.SetFloat(<em>DissolveAmountID</em>, m_DissolveAmount);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; yield return null;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
       &nbsp;&nbsp;&nbsp; }<br>
@@ -698,7 +698,7 @@
     <h1>練習問題</h1>
     <p>テレポートシェーダーを作ってください。</p>
     <img src="image/teleport.gif" alt=""><br>
-    <h1>if文を使うな！？</h1>
+    <h1>if文を使うな？</h1>
     <p>4章のディゾルブシェーダーではシェーダー内でif文を使っていますが、「<strong>シェーダーではなるべくif文を使うな</strong>」という意見がそこかしこから聞こえてきます。<br>
       「シェーダーは並列処理によって高速に動いているのに、if文で分岐するとうまく並列で処理できなくなるから遅くなる」という内容です。<br>
       そうはいっても、if文を使わずにディゾルブのような凝ったシェーダーを書くことなどできるのでしょうか？</p>

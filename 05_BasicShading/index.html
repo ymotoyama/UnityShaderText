@@ -929,6 +929,14 @@
       }</p>
     <p><br>
     </p>
+    <p>次のコードですが、</p>
+    <p class="source">// テクスチャカラーとライト結果をかけたものが最終結果<br>
+      return tex * float4(color, 1);</p>
+    <p>float4型とfloat4型の乗算です。これはどのような計算が行われるのかというと、<strong>それぞれのr同士、g同士、b同士、a同士を乗算したものが結果になります</strong>。</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
     <img src="image/2021-11-02_10h27_21.png" alt="">
     <p><br>
     </p>
