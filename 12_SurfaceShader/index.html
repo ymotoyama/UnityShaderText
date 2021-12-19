@@ -537,8 +537,9 @@
       どうやら、サーフェイスシェーダーはo.Normalに対して書き込みがあるかどうかで内部処理が変化するようです。<br>
       o.Normalに対して書き込みが無い場合は、ワールド空間反射ベクトルおよびワールド空間法線ベクトルを取得するのは変数を宣言するだけなので簡単ですが、o.Normalに対して書き込みがある場合は、ひと手間必要です。実際の使い方は後述します。</p>
     <h1>Emission</h1>
-    <p>出力構造体 <code>SurfaceOutputStandard</code> には<code>Emission</code>というメンバー変数（<code>half3</code>型）があり、これに色を設定することで、発光を表すことができます。自己発光を行う物体や、もしくはリムライトや光るアウトラインなどの追加の発光処理は、<code>Albedo</code>に色を設定するのではなく、<code>Emission</code>に光の量を設定しましょう（光を<code>Albedo</code>に加算してしまうと、物理ベースシェーディングが適切に行われない）。</p>
-    <p>ここでは、リムライトを試してみましょう。</p>
+    <p>出力構造体 <code>SurfaceOutputStandard</code> には<code>Emission</code>というメンバー変数（<code>half3</code>型）があり、これに色を設定することで、発光を表すことができます。自己発光を行う物体や、もしくはリムライトや光るアウトラインなどの追加の発光処理は、<code>Albedo</code>に色を加算するのではなく、<code>Emission</code>に光の量を設定しましょう（<code>Albedo</code>はあくまで「素材の地の色」を表すパラメーターであり、光を<code>Albedo</code>に加算してしまうと、シェーディングが適切に行われない）。</p>
+    <h2>リムライト</h2>
+    <p>リムライトのような追加の発光を表現するときには、<code>Emission</code>に値を設定します。サーフェイスシェーダーにリムライトを追加してみましょう。</p>
     <p class="source">Shader "Custom/Sample"<br>
       {<br>
       &nbsp;&nbsp;&nbsp; Properties<br>
@@ -591,7 +592,76 @@
       &nbsp;&nbsp;&nbsp; }<br>
       &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
       }</p>
-    <img src="image/2021-01-25_02h02_46.png" alt="">
+    <p> <img src="image/2021-01-25_02h02_46.png" alt=""></p>
+    <h2>練習問題</h2>
+    <p>テクスチャを使って、発光する部分を指定してみましょう。</p>
+    <p><img src="image/laputablock.gif" alt=""></p>
+    <p>使うテクスチャは<a href="material/laputa-block.zip">こちら</a>からダウンロードしてください。</p>
+    <br>
+    <h1>Occlusionマップ</h1>
+    <p>Standardシェーダーには、Occlusionマップというテクスチャが設定できる。</p>
+    <p><img src="material/occlusion.png" alt=""></p>
+    <p>Occlusionマップは、環境光の影響を受けなくするためのテクスチャです。<br>
+      なぜこのようなテクスチャが必要なのかというと、ゲームにおけるシェーディングでは、最終的な色を決定するための材料として「面の向き」と「光の向き」を使っており、面の手前に遮蔽物があるかどうかを真面目に計算していないからです。正確にいうと、ライトによる直接光に関しては、シャドウマップを使って、光が遮られているかを考慮していますが、環境光に関してはあらゆる方向から照らしてくるため、シャドウマップを使うわけにもいかず、真面目に計算しようとしたら、レイトレーシングをするしかありません。</p>
+    <p>そこで、Occlusionマップを使って環境光の遮蔽を近似で処理しています。Occlusionマップは3Dモデルの入り組んで奥まっている部分を表すテクスチャです。白い部分はオープンで光が当たりやすい場所を、黒い部分は奥まっていて光が当たりづらい場所を表しています。Occlusionマップの効果を具体的に述べると、黒い部分は環境光（グローバルイルミネーション）と環境マップ（Reflection Probeによる反射）の影響を受けなくなります。黒い部分も直接光の影響は受けます。直接光ではシャドウマップを使っているはずなので、遮蔽されているかどうかが正しく反映されるはずです（シャドウがオフのライトを使うと、Occlusionマップで黒い場所も明るくなってしまうので注意）。</p>
+    <p><img src="image/StandardShaderOcclusionMap.jpg" alt=""></p>
+    <p><a href="https://docs.unity3d.com/ja/2018.4/Manual/StandardShaderMaterialParameterOcclusionMap.html">公式サイト</a>より。左がOcclusionマップ無し、右がOcclusionマップあり。<br>
+      フードの中の、光が当たりづらいであろう場所の描画結果が異なります。<br>
+      左のOcclusionマップ無しのほうは、不適切に明るくなってしまっています（環境光が適用されている）。<br>
+      右のOcclusionマップありのほうは、環境光が抑えられ、暗くなっています。</p>
+    <p><br>
+    </p>
+    <p>このOcclusionマップの機能ですが、サーフェイスシェーダーの初期状態では有効になっていません。<br>
+      アセットストアのリアル系の素材は、Occlusionマップが用意されていることも多いので、サーフェイスシェーダーにOcclusionマップを適用できるようにしてみましょう。<br>
+      やり方は簡単で、出力構造体 <code>SurfaceOutputStandard</code> の<code>Occlusion</code>というメンバー変数（half型）に値を設定するだけです。</p>
+    <p class="source">Shader "Custom/Sample"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _NormalMap("Normal", 2D) = "bump" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MetallicSmoothness("Metallic(R), Smoothness(A)", 2D) = "black" {}<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _Occlusion("Occlusion", 2D) = "white" {}</em><br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType" = "Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard fullforwardshadows<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MetallicSmoothness;<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _Occlusion;</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf(Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Metallic＆Smoothnessマップをサンプリングする<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 ms = tex2D(_MetallicSmoothness, IN.uv_MainTex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // RチャンネルをMetallicとして使う<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = ms.r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // AチャンネルをSmoothnessとして使う<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = ms.a;<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Occlusionを設定<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Occlusion = tex2D(_Occlusion, IN.uv_MainTex).r;</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
     <h1>ワールド空間法線ベクトルを使う</h1>
     <p>ノーマルマップを使った場合のワールド空間の法線ベクトルを取得する処理が少しややこしいので、試してみましょう。<br>
       今回は、ワールド空間の法線ベクトルを使って、雪が積もって白くなるようなシェーダーを作ってみます。</p>
@@ -699,7 +769,7 @@
     <p>ただし、この指定の場合は、MetallicやSmoothnessの値に応じて光沢が残ります。</p>
     <p><img src="image/2021-01-25_02h33_12.png" alt=""></p>
     <p>ガラスのような物体向けです。</p>
-    <p>光沢も残さずに透明にしたい場合は、次のように指定します。</p>
+    <p>光沢を残さずに透明にしたい場合は、次のように指定します。</p>
     <p class="source">Shader "Custom/Sample"<br>
       {<br>
       &nbsp;&nbsp;&nbsp; Properties<br>
@@ -852,7 +922,7 @@
     </p>
     <p> </p>
     <h2>頂点シェーダーからパラメーターをsurf関数に渡す</h2>
-    <p>5-2章で、surf関数の入力構造体<code>Input</code>から様々な値が取得できることを説明しましたが、用意された値以外の値を取得したいときもあります。例えば、surf関数でオブジェクト空間座標が必要になったとします。そのような場合は、頂点モディファイア関数からInput構造体に値を引き渡すことができます。</p>
+    <p>5-2章で、surf関数の入力構造体<code>Input</code>から様々な値が取得できることを説明しましたが、用意された値以外の値をsurf関数内で取得したいときもあるでしょう。例えば、surf関数でオブジェクト空間座標を使いたいときなどです。そのような場合は、頂点モディファイア関数からInput構造体に値を引き渡すことができます。</p>
     <p class="source">Shader "MyShader/VertexVariable"<br>
       {<br>
       &nbsp;&nbsp;&nbsp; Properties<br>
@@ -1114,6 +1184,105 @@
       追加のPassブロックは、サーフェイスシェーダーに元からあるSubShader内でかつ、CGPROGRAM～ENDCGの外であれば、どこに書いても構わないようです。</p>
     <p><br>
     </p>
+    <h1>Final Colorモディファイア</h1>
+    <p>Final Colorモディファイアを使うことで、最終的に出力される色を調整することができます。<br>
+      シェーディングや影の適用が終わったピクセルの色に対して、さらに加工を施すことができます。<br>
+      Final Colorモディファイアで出力した色が、最終的にカラーバッファに出力される色になります。</p>
+    <p><img src="image/finalcolor.png" alt=""></p>
+    <p><br>
+    </p>
+    <p>ここでは、Final Colorモディファイアを使って、ハイトフォグ（高さによるフォグ）を作ってみましょう。</p>
+    <p class="source">Shader "Custom/HeightFog"<br>
+      {<br>
+      &nbsp;&nbsp;&nbsp; Properties<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _Color("Color", Color) = (1,1,1,1)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _MainTex("Albedo (RGB)", 2D) = "white" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _NormalMap("Normal", 2D) = "bump" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _MetallicSmoothness("Metallic(R), Smoothness(A)", 2D) = "black" {}<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [NoScaleOffset] _Occlusion("Occlusion", 2D) = "white" {}<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _HeightFogColor("Height Fog Color", Color) = (0, 0, 0, 1)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _HeightFogStart("Height Fog Start", Float) = 0<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _HeightFogEnd("Height Fog End", Float) = -1</em><br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; SubShader<br>
+      &nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tags { "RenderType" = "Opaque" }<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma surface surf Standard <em>finalcolor:heightfog</em> fullforwardshadows<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma target 3.0<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct Input<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float2 uv_MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em>float3 worldPos; // ワールド空間座標</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MainTex;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _NormalMap;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _MetallicSmoothness;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sampler2D _Occlusion;<br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 _HeightFogColor;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _HeightFogStart;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float _HeightFogEnd;</em><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void surf(Input IN, inout SurfaceOutputStandard o)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Albedo = c.rgb;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Metallic＆Smoothnessマップをサンプリングする<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fixed4 ms = tex2D(_MetallicSmoothness, IN.uv_MainTex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // RチャンネルをMetallicとして使う<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Metallic = ms.r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // AチャンネルをSmoothnessとして使う<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Smoothness = ms.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Occlusionを設定<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Occlusion = tex2D(_Occlusion, IN.uv_MainTex).r;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o.Alpha = c.a;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+      <br>
+      <em>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ファイナルカラーモディファイア。最終的な色を決定する。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void heightfog(Input IN, SurfaceOutputStandard o, inout fixed4 color) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 高さ（ワールド空間のy座標）に応じて、フォグの濃さを決定する<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float fog = smoothstep(_HeightFogStart, _HeightFogEnd, IN.worldPos.y);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 元の色とフォグをブレンドする<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color = lerp(color, _HeightFogColor, fog);<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</em><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG<br>
+      &nbsp;&nbsp;&nbsp; }<br>
+      &nbsp;&nbsp;&nbsp; FallBack "Diffuse"<br>
+      }</p>
+    <p><br>
+    </p>
+    <p>解説します。</p>
+    <p class="source">#pragma surface surf Standard <em>finalcolor:heightfog</em> fullforwardshadows</p>
+    <p>この部分が、ファイナルカラーモディファイア関数の名前を指定している部分です。今回は"heightfog"という名前にしましたが、任意の名前にできます。</p>
+    <p><br>
+    </p>
+    <p>ファイナルカラーモディファイア関数は以下のようになります。<br>
+      第3引数の<code>color</code>が<code>inout</code>の引数となっています。<br>
+      ファイナルカラーモディファイア関数の役割はフラグメントシェーダーと同様に「1ピクセルの色を決定すること」ですが、最後は<code>return</code>せず、入出力変数<code>color</code>に色をセットします。</p>
+    <p class="source">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void heightfog(Input IN, SurfaceOutputStandard o, inout fixed4 color) {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 高さ（ワールド空間のy座標）に応じて、フォグの濃さを決定する<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float fog = smoothstep(_HeightFogStart, _HeightFogEnd, IN.worldPos.y);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // 元の色とフォグをブレンドする<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color = lerp(color, _HeightFogColor, fog);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p>ハイトフォグは、使い方次第でいろんな表情を見せてくれるフォグです。</p>
+    <p><img src="image/2021-12-19_23h53_59.png" alt=""> </p>
+    <p><img src="image/2021-12-19_23h54_42.png" alt=""></p>
+    <p><img src="image/2021-12-20_00h15_33.png" alt=""></p>
+    <img src="image/2021-12-20_00h31_45.png" alt="">
+    <p><br>
+    </p>
+    <br>
     <p><br>
     </p>
     <p><br>
