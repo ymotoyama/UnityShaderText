@@ -54,7 +54,7 @@
     <p> <img src="image/MyFirstUnlitShader.png" alt=""> </p>
     <p>これがUnlitシェーダーの初期状態の見た目です。Unlitの名の通り、ライトの影響は受けず、陰影の無いのっぺりとした見た目になります。</p>
     <h1>自分で書いてみよう</h1>
-    <p>初期状態のUnlitシェーダーには、わりと余計なものがゴテゴテ付いているので、極限まで削ぎ落としたシェーダーを自分で書いてみましょう。</p>
+    <p>初期状態のUnlitシェーダーには、わりと余計なものがゴテゴテ付いているので、一度すべて削除し、極限まで削ぎ落としたシェーダーを自分で書いてみましょう。</p>
     <p>MyFirstShader.shaderを編集します。</p>
     <p class="source">Shader "Unlit/MyFirstShader"<br>
       {<br>
@@ -105,13 +105,13 @@
       &nbsp;&nbsp;&nbsp; {<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass <span style="color: #3232ff;">←Passブロック。複数定義すると、描画処理を2回行ったりすることができる。まあしばらくは1個で十分。アウトラインを出したいときなどは2つ使ったりする。</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM <span
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM <span
         style="color: #3232ff;">←「ここから下の記述はCg言語ですよ」という合図。Cg言語というのは、シェーダーを記述するための言語のひとつ。</span><br>
       <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert <span
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert <span
         style="color: #3232ff;">←頂点シェーダー（vertex shader）の関数名は「vert」だよ、という定義。関数名は好きな名前にして良いが、普通はvertにする。</span><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag <span
-        style="color: #3232ff;">←フラグメントシェーダー（fragment shader）の関数名は「frag」だよ、という定義。</span><span
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag <span
+        style="color: #3232ff;">←フラグメントシェーダー（fragment shader）の関数名は「frag」だよ、という定義。</span><span
         style="color: #3232ff;">関数名は好きな名前にして良いが、普通はfragにする。</span><br>
       <br>
       <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓入力構造体（Unityからデータを受け取るための構造体）の定義。<br>
@@ -142,7 +142,7 @@
       <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓RGBAが(1, 0, 0, 1)の色を返却。つまり赤を返却。</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(1, 0, 0, 1);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG <span
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG <span
         style="color: #3232ff;">←「ここまでがCg言語ですよ」という合図。</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
       &nbsp;&nbsp;&nbsp; }<br>
