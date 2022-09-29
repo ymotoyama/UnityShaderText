@@ -67,17 +67,12 @@
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag<br>
       <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION;<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
-      <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert (appdata v) : SV_POSITION<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(vertex);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
       <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag () : SV_Target<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 frag() : SV_Target<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(1, 0, 0, 1);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
@@ -105,33 +100,27 @@
       &nbsp;&nbsp;&nbsp; {<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pass <span style="color: #3232ff;">←Passブロック。複数定義すると、描画処理を2回行ったりすることができる。まあしばらくは1個で十分。アウトラインを出したいときなどは2つ使ったりする。</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM <span
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CGPROGRAM <span
         style="color: #3232ff;">←「ここから下の記述はCg言語ですよ」という合図。Cg言語というのは、シェーダーを記述するための言語のひとつ。</span><br>
       <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert <span
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma vertex vert <span
         style="color: #3232ff;">←頂点シェーダー（vertex shader）の関数名は「vert」だよ、という定義。関数名は好きな名前にして良いが、普通はvertにする。</span><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag <span
-        style="color: #3232ff;">←フラグメントシェーダー（fragment shader）の関数名は「frag」だよ、という定義。</span><span
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #pragma fragment frag <span
+        style="color: #3232ff;">←フラグメントシェーダー（fragment shader）の関数名は「frag」だよ、という定義。</span><span
         style="color: #3232ff;">関数名は好きな名前にして良いが、普通はfragにする。</span><br>
       <br>
-      <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓入力構造体（Unityからデータを受け取るための構造体）の定義。<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; appdataという名前は好きな名前に変えて良いが、普通はappdataとする。</span><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct appdata<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
-      <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓float4 vertexの部分は型と変数名の定義。変数名は自由。<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : POSITIONの部分はセマンティクスの指定。セマンティクスとは「意味」という意味で、その変数にどのデータを格納すれば良いかを表す。<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; POSITIONというのは頂点座標のこと。つまり、vertexという変数には頂点座標（オブジェクト空間）が格納される。</span><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vertex : POSITION; <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };<br>
-      <br>
       <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓頂点シェーダー関数の定義。<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 「float4」は戻り値の型を表す。「: SV_POSITION」はセマンティクスであり、戻り値が頂点座標であることを表す。<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 頂点シェーダーの戻り値はfloat4型でも構造体でも良いが、いずれにせよ、SV_POSITIONセマンティクスが付与されたデータを返却しなければならない。</span><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert (appdata v) : SV_POSITION<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 最初の「float4」は戻り値の型を表す。末尾の「: SV_POSITION」は戻り値に対するセマンティクスであり、戻り値が座標変換後の頂点座標であることを表す。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; （※セマンティクスというのは、「意味」という意味であり、シェーダーにおいては、その変数や引数が何なのか、何のデータが格納されているのか、格納すべきなのか、をシステムに伝えるためのもの）<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 頂点シェーダーの戻り値はfloat4型でも構造体でも良いが、いずれにせよ、SV_POSITIONセマンティクスが付与されたデータを返却しなければならない。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 「float4 vertex」は引数の型と名前を表す。float4型のvertexという名前の引数を受け取ることを表す。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 「 : POSITION」は変換前の頂点座標（オブジェクト空間座標）を表すセマンティクス。引数に対して「 : POSITION」と指定することで、引数vertexに頂点座標が入ってくるようになる。<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ※今は引数が一つしか無いため、セマンティクスの指定は冗長に感じるかもしれないが、実用的なシェーダーは入力が複数あるため、セマンティクスは必須となる。</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float4 vert (float4 vertex : POSITION) : SV_POSITION<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {<br>
       <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓UnityObjectToClipPos()というのはオブジェクト空間をクリップ空間に変換するヘルパー関数。<br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MVP行列をかけるのと同じ。</span><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(v.vertex);<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return UnityObjectToClipPos(vertex);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
       <br>
       <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓フラグメントシェーダー関数の定義。<br>
@@ -142,13 +131,17 @@
       <span style="color: #3232ff;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↓RGBAが(1, 0, 0, 1)の色を返却。つまり赤を返却。</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return float4(1, 0, 0, 1);<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG <span
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCG <span
         style="color: #3232ff;">←「ここまでがCg言語ですよ」という合図。</span><br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
       &nbsp;&nbsp;&nbsp; }<br>
       }</p>
     <p><br>
     </p>
+    <p class="column"><b>ShaderLab</b><br>
+      <br>
+      Unityのshaderファイルは、Unity独自の書き方となっており、ShaderLab（シェーダーラボ）と呼ばれます。頂点シェーダーとフラグメントシェーダーを分けることなく、一つのファイルに記述することができます。それだけでなく、プログラム側からシェーダーに渡すパラメーターの定義なども同じファイルに記述することができます。コンパイル作業も自動で行われ、ゲーム再生中でも即時反映されます。大変便利なものです。</p>
+    <p> </p>
     <p class="column"><b>初期状態のシェーダーに書いてあったのはなんだったのか</b><br>
       <br>
       初期状態のシェーダーに書いてある内容の意味を完全に理解したい場合は、こちらのページがとても参考になります。<br>
@@ -176,10 +169,10 @@
       ちなみに、さらに、モバイル機などのために、精度を落として処理負荷を下げた型（fixed、half）もあるのですが、この授業は入門が目的なので、高速化を目的としたそれらの型は扱いません（PCだと意味無いし）。</p>
     <h1>自分で変換してみよう</h1>
     <p>vert関数の内容を、次のように書き換えてみましょう：</p>
-    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+    <p class="source">float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
       {<br>
       <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // 入力構造体から頂点座標（オブジェクト空間）を取り出す</span><br>
-      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = vertex;<br>
       <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // モデル行列を使って、オブジェクト空間からワールド空間に変換</span><br>
       &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
       <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // ビュー行列を使って、ワールド空間からビュー空間に変換</span><br>
@@ -196,10 +189,10 @@
       特に必要なければ、普通は素直に<code>UnityObjectToClipPos()</code>を使いましょう。</p>
     <h1>頂点座標をいじってみよう</h1>
     <p>例えば次のようにすると、オブジェクトの表示位置が、本来の位置から1メートル上にズレます。（黄色部分を追加）</p>
-    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+    <p class="source">float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
       {<br>
       &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// 入力構造体から頂点座標（オブジェクト空間）を取り出す</span><br>
-      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = vertex;<br>
       &nbsp;&nbsp;&nbsp; <em>objectPos.y += 1;</em><br>
       &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// モデル行列を使って、オブジェクト空間からワールド空間に変換</span><br>
       &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
@@ -214,10 +207,10 @@
     </p>
     <p><img src="image/03.png" alt=""></p>
     <p>これだけではあまり面白くないので、時間とともに動くようにしてみましょう。</p>
-    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+    <p class="source">float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
       {<br>
       <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // 入力構造体から頂点座標（オブジェクト空間）を取り出す</span><br>
-      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = vertex;<br>
       &nbsp;&nbsp;&nbsp; objectPos.y += <em>sin(_Time.y)</em>;<br>
       <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // モデル行列を使って、オブジェクト空間からワールド空間に変換</span><br>
       &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
@@ -237,10 +230,10 @@
     <p><br>
     </p>
     <p>さらに書き足してみましょう：</p>
-    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+    <p class="source">float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
       {<br>
       <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // 入力構造体から頂点座標（オブジェクト空間）を取り出す</span><br>
-      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = vertex;<br>
       &nbsp;&nbsp;&nbsp; objectPos.y += sin(_Time.y<em> + objectPos.x</em>);<br>
       <span style="color: #219a43;">&nbsp;&nbsp;&nbsp; // モデル行列を使って、オブジェクト空間からワールド空間に変換</span><br>
       &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
@@ -266,10 +259,10 @@
     <p><br>
     </p>
     <p>動きをよく確認したら、シェーダープログラムを次のように書き換えてみましょう：</p>
-    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+    <p class="source">float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
       {<br>
       &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// 入力構造体から頂点座標（オブジェクト空間）を取り出す</span><br>
-      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = vertex;<br>
       &nbsp;&nbsp;&nbsp; <u>//objectPos.y += sin(_Time.y + objectPos.x);</u><br>
       &nbsp;&nbsp;&nbsp; <span style="color: #219a43;">// モデル行列を使って、オブジェクト空間からワールド空間に変換</span><br>
       &nbsp;&nbsp;&nbsp; float4 worldPos = mul(UNITY_MATRIX_M, objectPos);<br>
@@ -291,10 +284,10 @@
     <p>Unityでシェーダーを書くにあたっては、変換行列はUnityが用意してくれるため、座標空間と変換行列の役割さえ理解しておけば、行列に関する詳しい知識は無くても、ほとんど問題ありません。</p>
     <p>ただ、マニアックな表現をしようとすると、自分で変換行列を組み立てる必要が出てくることもあるでしょう。その場合は、行列の知識がある程度必要になってきます。</p>
     <p>例えば、頂点シェーダー内で任意の回転を行いたいという場合、回転行列がわかっていれば、実現できます。</p>
-    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+    <p class="source">float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
       {<br>
       &nbsp;&nbsp;&nbsp; // 入力構造体から頂点座標（オブジェクト空間）を取り出す<br>
-      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = vertex;<br>
       <em>&nbsp;&nbsp;&nbsp; // 回転角度。オブジェクトの中心から離れるほど増える。時間経過でも増える。<br>
         &nbsp;&nbsp;&nbsp; float theta = objectPos.y * 4 * _Time.y;<br>
         &nbsp;&nbsp;&nbsp; // サインとコサインを求める<br>
@@ -321,10 +314,10 @@
       なお、変換行列や逆行列の式などを暗記する必要はありません。その都度調べれば済むことです。<br>
       各種行列の特徴などを把握していればOKです。</p>
     <p>ちなみに、上記のY軸回転させるシェーダーですが、Y軸回転はXZ平面で二次元の回転を行うのと同じなので、以下のように簡略化することができます：</p>
-    <p class="source">float4 vert(appdata v) : SV_POSITION<br>
+    <p class="source">float4 vert(float4 vertex : POSITION) : SV_POSITION<br>
       {<br>
       &nbsp;&nbsp;&nbsp; // 入力構造体から頂点座標（オブジェクト空間）を取り出す<br>
-      &nbsp;&nbsp;&nbsp; float4 objectPos = v.vertex;<br>
+      &nbsp;&nbsp;&nbsp; float4 objectPos = vertex;<br>
       &nbsp;&nbsp;&nbsp; // 回転角度。オブジェクトの中心から離れるほど増える。時間経過でも増える。<br>
       &nbsp;&nbsp;&nbsp; float theta = objectPos.y * 3 * _Time.y;<br>
       &nbsp;&nbsp;&nbsp; // サインとコサインを求める<br>
