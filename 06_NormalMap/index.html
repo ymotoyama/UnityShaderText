@@ -288,8 +288,17 @@
     <p style="background-color: white;">ノーマルマップに格納された法線ベクトルは、接空間のX軸（接線）、Y軸（従法線）、Z軸（法線）を使って表現されたベクトルです。</p>
     <p><img src="image/NTBFromUVs.png" alt=""></p>
     <p>そして、今回、接空間のX軸、Y軸、Z軸をワールド空間に変換したベクトルは算出済みです（それぞれ、<code>i.tangent</code>、<code>i.binormal</code>、<code>i.normal</code>）。</p>
-    <p>ノーマルマップに格納された法線ベクトルのX, Y, Zの値は、各軸に対する量を表しているので、法線ベクトルのX, Y, Zをワールド空間に変換済みのX軸、Y軸、Z軸にかけてあげれば、ワールド空間に変換されます。</p>
-    <p>ネットなどで調べると、接空間の法線ベクトルをワールド空間に変換するために、変換行列を使うサンプルコードが多く出てきますが、変換行列を使うより、こちらの方法のほうが単純で高速です。</p>
+    <p>ノーマルマップに格納された法線ベクトルのX, Y, Zの値は、各軸に対する量を表しているので、法線ベクトルのX, Y, Zの値をワールド空間に変換済みのX軸、Y軸、Z軸にかけてあげれば、ワールド空間に変換されます。</p>
+    <p>接空間の法線ベクトルをワールド空間に変換する別のやり方として、法線、接線、従法線を使って回転行列を作り、それと掛けるという方法もあります。</p>
+    <p class="source">// ノーマルマップから読み取った法線ベクトル（接空間）をワールド空間に変換する（行列版）<br>
+      float3x3 matrix = float3x3(<br>
+      &nbsp;&nbsp;&nbsp; i.tangent.x, i.binormal.x, i.normal.x,<br>
+      &nbsp;&nbsp;&nbsp; i.tangent.y, i.binormal.y, i.normal.y,<br>
+      &nbsp;&nbsp;&nbsp; i.tangent.z, i.binormal.z, i.normal.z);<br>
+      float3 worldNormal = mul(matrix, normalMap);</p>
+    <p>ひとつ前の方法と実行速度を比較してみましたが、まったく違いが見られなかったので、好きな方を使えば良いでしょう。</p>
+    <p><br>
+    </p>
     <p><br>
     </p>
     <p>以上で、ワールド空間の法線ベクトルが取得できました。<br>
